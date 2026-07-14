@@ -1,0 +1,1964 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>初一数学公式可视化互动学习</title>
+<!-- Umami 站点统计（隐私友好，仅 math.qiaomu.ai 域名生效） -->
+<script defer src="https://umami.qiaomu.ai/script.js" data-website-id="0dcb0c05-5c4e-4f1d-aaf0-3cb35dba1d96" data-domains="math.qiaomu.ai"></script>
+<!-- KaTeX：公式渲染（CDN 引入；加载失败时自动回退为 Unicode 文本公式） -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+<style>
+/* ==================== 设计令牌：色板 / 圆角 / 阴影 / 字阶 / 间距 / 动效 ==================== */
+:root{
+  /* 品牌色：主色蓝 + 辅助橙/绿（彩色填充饱和度均 <80%），功能色语义固定 */
+  --blue:#5C8CEB;          /* 柔和蓝：图形/强调 */
+  --blue-deep:#3E63C8;     /* 深蓝：实心按钮/选中态（白字对比度达标） */
+  --blue-dark:#3557B3;     /* 深蓝 hover 加深 */
+  --blue-text:#2F5BC4;     /* 蓝色文字（读数） */
+  --blue-50:#EDF3FD;
+  --blue-100:#DCE7FA;
+  --blue-200:#B7CCF4;
+  --orange:#E99C4F;        /* 哑光橙：第二要素 */
+  --orange-text:#B26A1B;
+  --orange-100:#FBEAD3;
+  --orange-200:#F2D5B0;
+  --green:#2ECC71;         /* 绿：结果/正确 */
+  --green-text:#157F44;
+  --green-100:#D9F5E5;
+  --green-200:#B8E7CB;
+  --red:#E74C3C;           /* 红：减去/强调 */
+  --red-text:#C0392B;
+  --red-100:#FBE4E1;
+  --red-200:#F2C6C0;
+  /* 暖灰中性色（不用纯黑 #000） */
+  --ink:#33302B;
+  --muted:#6E695F;
+  --bg:#F6F4F0;            /* 暖纸浅底 */
+  --surface:#FFFFFF;
+  --line:#E9E5DC;
+  --line-2:#D9D3C7;
+  /* 圆角刻度 */
+  --r-sm:8px;
+  --r-md:12px;
+  --r-lg:16px;
+  --r-xl:22px;
+  --r-pill:999px;
+  /* 阴影刻度（染暖底色，不用纯灰黑） */
+  --sh-xs:0 1px 2px rgba(74,63,44,.07);
+  --sh-sm:0 1px 2px rgba(74,63,44,.05),0 3px 8px rgba(74,63,44,.06);
+  --sh-md:0 2px 4px rgba(74,63,44,.05),0 10px 24px rgba(74,63,44,.08);
+  --sh-blue:0 3px 10px rgba(62,99,200,.30);
+  --ring:0 0 0 3px rgba(92,140,235,.30);
+  /* 字阶 / 间距刻度 */
+  --fs-xs:.78rem; --fs-sm:.85rem; --fs-md:.93rem; --fs-lg:1.05rem; --fs-xl:1.25rem; --fs-2xl:1.45rem;
+  --sp-1:4px; --sp-2:8px; --sp-3:12px; --sp-4:16px; --sp-5:20px; --sp-6:28px;
+  /* 动效：统一缓动 + 时长 */
+  --ease:cubic-bezier(.23,1,.32,1);
+  --dur:180ms;
+  --dur-slow:260ms;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html{-webkit-text-size-adjust:100%;}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans SC","Segoe UI",system-ui,sans-serif;
+  background:var(--bg);color:var(--ink);line-height:1.6;min-height:100dvh;
+  -webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;
+}
+button{font-family:inherit;}
+::selection{background:rgba(92,140,235,.24);}
+:focus{outline:none;}
+:is(.btn,.nav-btn,.mute-btn,.stepper button):focus-visible{box-shadow:var(--ring);}
+
+/* ==================== 顶部标题栏 ==================== */
+.app-header{
+  position:relative;overflow:hidden;
+  background:var(--surface);border-bottom:1px solid var(--line);
+  box-shadow:var(--sh-xs);
+}
+/* 签名细节：5% 透明度的数学符号水印纹理 */
+.app-header::before{
+  content:"";position:absolute;inset:0;pointer-events:none;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='170'%3E%3Cg font-family='Georgia,serif' fill='%232F5BC4' fill-opacity='0.05'%3E%3Ctext x='22' y='62' font-size='38'%3E%26%23960;%3C/text%3E%3Ctext x='128' y='102' font-size='30' transform='rotate(-12 128 102)'%3E%26%238730;%3C/text%3E%3Ctext x='216' y='48' font-size='32'%3E%26%238721;%3C/text%3E%3Ctext x='66' y='148' font-size='28'%3E%26%238734;%3C/text%3E%3Ctext x='176' y='150' font-size='30' transform='rotate(9 176 150)'%3E%26%238736;%3C/text%3E%3Ctext x='262' y='118' font-size='24'%3E%26%23916;%3C/text%3E%3C/g%3E%3C/svg%3E");
+}
+.header-inner{
+  position:relative;max-width:1180px;margin:0 auto;
+  padding:22px 20px;display:flex;align-items:flex-start;justify-content:space-between;gap:18px;
+}
+.app-header h1{font-size:var(--fs-2xl);font-weight:800;letter-spacing:0;}
+.app-header .subtitle{font-size:var(--fs-sm);color:var(--muted);margin-top:6px;max-width:620px;}
+.mute-btn{
+  flex-shrink:0;cursor:pointer;
+  background:var(--surface);color:var(--ink);
+  border:1.5px solid var(--line-2);border-radius:var(--r-pill);
+  font-weight:700;font-size:var(--fs-xs);padding:7px 14px;
+  transition:border-color var(--dur) var(--ease),color var(--dur) var(--ease),transform var(--dur) var(--ease),box-shadow var(--dur) var(--ease);
+}
+.mute-btn:active{transform:scale(.97);}
+
+/* ==================== 整体布局：左导航 + 右内容 ==================== */
+.app{display:flex;gap:22px;max-width:1180px;margin:20px auto;padding:0 20px;align-items:flex-start;}
+.side-nav{
+  width:200px;flex-shrink:0;display:flex;flex-direction:column;gap:8px;padding:4px;
+  position:sticky;top:16px;max-height:calc(100dvh - 32px);
+  overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin;
+}
+.side-nav::-webkit-scrollbar{width:5px;}
+.side-nav::-webkit-scrollbar-thumb{background:var(--line-2);border-radius:3px;}
+.nav-btn{
+  display:flex;align-items:center;gap:10px;width:100%;text-align:left;
+  background:var(--surface);border:1.5px solid transparent;border-radius:var(--r-md);
+  padding:11px 13px;font-size:var(--fs-md);font-weight:700;color:var(--ink);
+  cursor:pointer;box-shadow:var(--sh-xs);
+  transition:background-color var(--dur) var(--ease),border-color var(--dur) var(--ease),color var(--dur) var(--ease),box-shadow var(--dur) var(--ease),transform var(--dur) var(--ease);
+}
+.nav-btn:active{transform:scale(.97);}
+/* 选中态：整块底色 + 全边框 + 加粗字重（不用左侧竖线） */
+.nav-btn.active{
+  background:var(--blue-deep);border-color:var(--blue-dark);
+  color:#fff;font-weight:800;box-shadow:var(--sh-blue);
+}
+.nav-num{
+  display:inline-flex;width:23px;height:23px;border-radius:50%;flex-shrink:0;
+  align-items:center;justify-content:center;font-size:var(--fs-xs);font-weight:800;
+  background:var(--blue-100);color:var(--blue-text);font-variant-numeric:tabular-nums;
+  transition:background-color var(--dur) var(--ease),color var(--dur) var(--ease);
+}
+.nav-btn.active .nav-num{background:rgba(255,255,255,.24);color:#fff;}
+.content{flex:1;min-width:0;}
+
+/* ==================== 模块区块 ==================== */
+.module{display:none;}
+.module.active{display:block;animation:modIn var(--dur-slow) var(--ease);}
+@keyframes modIn{from{opacity:0;transform:translateY(4px);}to{opacity:1;transform:none;}}
+.module h2{
+  font-size:var(--fs-xl);font-weight:800;letter-spacing:0;
+  margin:2px 0 14px;display:flex;align-items:center;gap:10px;
+}
+.sec-num{
+  display:inline-flex;width:30px;height:30px;border-radius:10px;flex-shrink:0;
+  align-items:center;justify-content:center;font-size:1rem;font-weight:800;
+  background:var(--blue);color:#fff;box-shadow:0 2px 6px rgba(92,140,235,.32);
+  font-variant-numeric:tabular-nums;
+}
+
+/* 公式展示条（KaTeX 渲染目标）：统一的浅蓝底带 */
+.formula-bar{
+  background:var(--blue-50);border:1px solid var(--blue-100);border-radius:var(--r-md);
+  padding:12px 18px;display:flex;gap:8px 26px;flex-wrap:wrap;align-items:center;
+  font-size:1.08rem;margin-bottom:16px;overflow-x:auto;
+}
+.formula-bar .katex{font-size:1.05em;}
+.fb-item{display:flex;align-items:center;gap:8px;white-space:nowrap;}
+.fb-text{
+  color:var(--muted);font-size:var(--fs-xs);
+  background:var(--surface);border:1px solid var(--line);border-radius:var(--r-pill);
+  padding:2px 9px;
+}
+
+/* 卡片 */
+.card{
+  background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);
+  padding:18px 20px;box-shadow:var(--sh-sm);margin-bottom:16px;
+}
+.card-title{font-weight:800;margin-bottom:12px;font-size:1rem;letter-spacing:0;}
+.viz{
+  width:100%;display:block;border-radius:var(--r-md);background:#FDFDFB;
+  border:1px solid var(--line);touch-action:none; /* 关键：允许触摸拖动而不滚动页面 */
+}
+
+/* 控件：按钮、滑块、步进器 */
+.controls{display:flex;gap:10px;flex-wrap:wrap;margin:14px 0 4px;align-items:center;}
+.btn{
+  min-height:36px;display:inline-flex;align-items:center;justify-content:center;
+  border:1.5px solid var(--line-2);background:var(--surface);color:var(--ink);
+  border-radius:var(--r-md);padding:7px 16px;font-size:.88rem;font-weight:700;cursor:pointer;
+  transition:background-color var(--dur) var(--ease),border-color var(--dur) var(--ease),color var(--dur) var(--ease),box-shadow var(--dur) var(--ease),transform var(--dur) var(--ease);
+}
+.btn:active{transform:scale(.97);}
+.btn-primary{background:var(--blue-deep);border-color:var(--blue-deep);color:#fff;box-shadow:var(--sh-blue);}
+.btn:disabled{opacity:.45;cursor:not-allowed;transform:none;box-shadow:none;}
+.slider-row{display:flex;align-items:center;gap:12px;margin:10px 0;}
+.slider-row label{width:74px;font-weight:700;font-size:.88rem;flex-shrink:0;}
+.slider-row input[type=range]{
+  -webkit-appearance:none;appearance:none;flex:1;height:6px;border-radius:3px;
+  background:var(--blue-100);outline:none;cursor:pointer;
+}
+.slider-row input[type=range]::-webkit-slider-thumb{
+  -webkit-appearance:none;appearance:none;width:20px;height:20px;border-radius:50%;
+  background:var(--blue);border:3px solid #fff;box-shadow:0 1px 4px rgba(74,63,44,.28);
+  cursor:pointer;transition:transform var(--dur) var(--ease),box-shadow var(--dur) var(--ease);
+}
+.slider-row input[type=range]::-moz-range-thumb{
+  width:14px;height:14px;border-radius:50%;background:var(--blue);
+  border:3px solid #fff;box-shadow:0 1px 4px rgba(74,63,44,.28);
+  cursor:pointer;transition:transform var(--dur) var(--ease),box-shadow var(--dur) var(--ease);
+}
+.slider-row input[type=range]::-moz-range-track{height:6px;border-radius:3px;background:var(--blue-100);}
+.slider-row input[type=range]:focus-visible::-webkit-slider-thumb{box-shadow:var(--ring),0 1px 4px rgba(74,63,44,.28);}
+.slider-row input[type=range]:focus-visible::-moz-range-thumb{box-shadow:var(--ring),0 1px 4px rgba(74,63,44,.28);}
+.val-badge{
+  min-width:38px;text-align:center;background:var(--blue-50);border:1px solid var(--blue-100);
+  color:var(--blue-text);border-radius:var(--r-sm);padding:4px 8px;font-weight:800;
+  font-size:.88rem;flex-shrink:0;font-variant-numeric:tabular-nums;
+}
+.stepper{display:inline-flex;align-items:center;gap:8px;font-weight:700;font-size:.9rem;}
+.stepper button{
+  width:30px;height:30px;display:inline-flex;align-items:center;justify-content:center;
+  border-radius:var(--r-sm);border:1.5px solid transparent;background:var(--blue-50);
+  color:var(--blue-text);font-size:16px;font-weight:800;cursor:pointer;
+  transition:background-color var(--dur) var(--ease),color var(--dur) var(--ease),transform var(--dur) var(--ease);
+}
+.stepper button:active{transform:scale(.97);}
+.stepper b{min-width:22px;text-align:center;font-size:1.02rem;font-variant-numeric:tabular-nums;}
+
+/* 数值读数 chips（数字用等宽数字） */
+.readout{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px;align-items:center;}
+.chip{
+  display:inline-flex;align-items:center;padding:5px 13px;border-radius:var(--r-pill);
+  font-weight:700;font-size:.88rem;border:1px solid transparent;
+  font-variant-numeric:tabular-nums;
+  transition:transform var(--dur) var(--ease);
+}
+.chip b{font-weight:800;}
+.c-blue{background:var(--blue-50);color:var(--blue-text);border-color:var(--blue-100);}
+.c-orange{background:var(--orange-100);color:var(--orange-text);border-color:var(--orange-200);}
+.c-green{background:var(--green-100);color:var(--green-text);border-color:var(--green-200);}
+.c-red{background:var(--red-100);color:var(--red-text);border-color:var(--red-200);}
+.c-gray{background:#F1EEE7;color:#5F5A50;border-color:#E3DED2;}
+/* 数值变化时的闪烁过渡动画（只动 transform/opacity） */
+.flash{animation:flashA .6s var(--ease);}
+@keyframes flashA{0%{transform:scale(1.12);opacity:.7;}100%{transform:scale(1);opacity:1;}}
+
+.rule-note{
+  margin-top:12px;padding:10px 14px;background:#FBF4E3;border:1px solid #EFE0BE;
+  border-radius:var(--r-md);color:#8A5A12;font-size:.88rem;line-height:1.55;
+}
+.explain{color:var(--muted);font-size:.9rem;line-height:1.7;margin:2px 2px 20px;}
+.explain b{color:var(--ink);}
+
+/* ==================== 模块二：方块堆叠 ==================== */
+.blocks-stage{
+  display:flex;align-items:center;gap:12px;flex-wrap:wrap;
+  padding:16px 6px 6px;justify-content:center;
+}
+.stage-item{display:flex;flex-direction:column;gap:7px;align-items:center;}
+.block-group{
+  display:flex;gap:6px;flex-wrap:wrap;justify-content:center;max-width:340px;
+  padding:10px;border-radius:var(--r-md);background:#F8FAFF;border:1.5px dashed var(--blue-200);
+}
+.block{
+  width:34px;height:34px;border-radius:8px;display:flex;align-items:center;justify-content:center;
+  color:#fff;font-weight:800;background:var(--blue);
+  transition:background-color .45s var(--ease),transform .45s var(--ease);
+}
+.block.b2{background:var(--orange);}
+.block.merged{background:var(--green);transform:translateY(-5px) scale(1.06);}
+.pow-plus{font-size:24px;font-weight:800;color:var(--muted);transition:opacity .4s var(--ease);}
+.pow-caption{font-size:var(--fs-xs);color:var(--muted);text-align:center;}
+.pow-result{
+  text-align:center;font-weight:800;color:var(--green-text);margin-top:10px;font-size:1rem;
+  opacity:0;transform:scale(.85);
+  transition:opacity .45s var(--ease),transform .45s var(--ease);
+}
+.pow-result.show{opacity:1;transform:scale(1);}
+.pow-expand{overflow-x:auto;padding:6px 2px;text-align:center;font-size:1.05rem;}
+
+/* ==================== 模块三：可点击公式项 ==================== */
+.fchips{
+  display:flex;gap:6px;align-items:center;flex-wrap:wrap;
+  margin:12px 0 2px;font-weight:800;font-size:1.05rem;
+}
+.fplus{color:var(--muted);}
+.fchip{
+  padding:6px 15px;border-radius:10px;background:#F2F0EA;color:#6E695F;font-size:1rem;
+  transition:background-color var(--dur-slow) var(--ease),color var(--dur-slow) var(--ease),transform var(--dur-slow) var(--ease);
+}
+.fchip.on-blue{background:var(--blue-100);color:var(--blue-text);transform:scale(1.1);}
+.fchip.on-orange{background:var(--orange-100);color:var(--orange-text);transform:scale(1.1);}
+.fchip.on-green{background:var(--green-100);color:var(--green-text);transform:scale(1.1);}
+
+/* ==================== 模块四：天平 ==================== */
+.eq-display{
+  text-align:center;font-size:1.2rem;padding:10px;background:#FBFAF7;border:1px solid var(--line);
+  border-radius:var(--r-md);margin:12px 0;overflow-x:auto;min-height:2.2em;
+  display:flex;align-items:center;justify-content:center;
+}
+.step-bar{display:flex;align-items:center;gap:12px;margin:12px 0;flex-wrap:wrap;}
+.step-dots span{
+  width:9px;height:9px;border-radius:50%;background:#D8D2C6;
+  display:inline-block;margin:0 4px;
+  transition:background-color var(--dur) var(--ease),transform var(--dur) var(--ease);
+}
+.step-dots span.on{background:var(--blue);transform:scale(1.3);}
+.legend-note{font-size:var(--fs-sm);color:var(--muted);margin-top:10px;}
+
+/* ==================== Hover 动效（仅精确指针设备） ==================== */
+@media (hover:hover) and (pointer:fine){
+  .nav-btn:hover{border-color:var(--blue-200);color:var(--blue-text);}
+  .mute-btn:hover{border-color:var(--blue);color:var(--blue-text);}
+  .btn:not(:disabled):hover{border-color:var(--blue);color:var(--blue-text);}
+  .btn-primary:not(:disabled):hover{background:var(--blue-dark);border-color:var(--blue-dark);color:#fff;}
+  .stepper button:hover{background:var(--blue);color:#fff;}
+  .slider-row input[type=range]::-webkit-slider-thumb:hover{transform:scale(1.15);}
+}
+
+/* ==================== 减弱动效兜底 ==================== */
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{
+    animation-duration:.01ms !important;animation-iteration-count:1 !important;
+    transition-duration:.01ms !important;
+  }
+}
+
+/* ==================== 响应式：窄屏时导航变为顶部横向滚动条 ==================== */
+@media (max-width:900px){
+  .app{flex-direction:column;gap:12px;padding:0 12px;margin-top:14px;}
+  .side-nav{
+    width:100%;flex-direction:row;overflow-x:auto;overscroll-behavior:contain;
+    position:sticky;top:0;z-index:30;max-height:none;padding:8px 4px 14px;
+    background:var(--bg);border-bottom:1px solid var(--line);scrollbar-width:none;
+  }
+  .side-nav::-webkit-scrollbar{display:none;}
+  .nav-btn{width:auto;white-space:nowrap;padding:8px 13px;flex-shrink:0;font-size:.86rem;}
+  /* 窄屏水印降噪：更不透 + 更细密的平铺，避免孤立符号漂浮 */
+  .app-header::before{opacity:.5;background-size:210px 119px;}
+  .header-inner{padding:16px 14px;}
+  .app-header h1{font-size:1.2rem;}
+  .app-header .subtitle{font-size:.84rem;}
+  .mute-btn{font-size:.75rem;padding:6px 12px;}
+  .formula-bar{font-size:.98rem;gap:8px 16px;padding:10px 14px;}
+  .card{padding:16px 14px;}
+}
+@media (max-width:480px){
+  .app{padding:0 10px;}
+  .module h2{font-size:1.1rem;}
+  .slider-row label{width:66px;font-size:.82rem;}
+  .slider-row input[type=range]::-webkit-slider-thumb{width:24px;height:24px;}
+  .slider-row input[type=range]::-moz-range-thumb{width:17px;height:17px;}
+  .controls{gap:8px;}
+  .btn{min-height:34px;padding:6px 13px;font-size:.84rem;}
+  .chip{font-size:.82rem;padding:4px 11px;}
+}
+</style>
+</head>
+<body>
+
+<!-- ==================== 页面顶部：标题 + 使用说明 ==================== -->
+<header class="app-header">
+  <div class="header-inner">
+    <div class="header-text">
+      <h1>初一数学公式可视化互动学习</h1>
+      <p class="subtitle">点击左侧导航切换模块；拖动画布上的控制点、滑块和按钮，让抽象的公式“动”起来！</p>
+    </div>
+    <button id="muteBtn" class="mute-btn">音效：开</button>
+  </div>
+</header>
+
+<div class="app">
+  <!-- ==================== 左侧导航栏（6 个模块，单页内切换） ==================== -->
+  <nav class="side-nav">
+    <button class="nav-btn active" data-target="module-1"><span class="nav-num">1</span>有理数运算</button>
+    <button class="nav-btn" data-target="module-2"><span class="nav-num">2</span>整式运算</button>
+    <button class="nav-btn" data-target="module-3"><span class="nav-num">3</span>乘法公式</button>
+    <button class="nav-btn" data-target="module-4"><span class="nav-num">4</span>一元一次方程</button>
+    <button class="nav-btn" data-target="module-5"><span class="nav-num">5</span>几何图形初步</button>
+    <button class="nav-btn" data-target="module-6"><span class="nav-num">6</span>平面直角坐标系</button>
+  </nav>
+
+  <main class="content">
+
+    <!-- ==================== 模块一：有理数运算 ==================== -->
+    <section class="module active" id="module-1">
+      <h2><span class="sec-num">1</span>有理数运算</h2>
+      <div class="formula-bar">
+        <div class="fb-item"><span class="tex" data-tex="|a|=\begin{cases}a, &amp; a\ge 0\\ -a, &amp; a<0\end{cases}">|a| = a（a≥0）；|a| = −a（a<0）</span></div>
+        <div class="fb-item"><span class="tex" data-tex="a-b=a+(-b)">a − b = a + (−b)</span></div>
+      </div>
+      <div class="card">
+        <div class="card-title">可交互数轴：拖动 A、B 两点，观察和与差</div>
+        <canvas id="nlCanvas" class="viz" style="height:240px"></canvas>
+        <div class="controls">
+          <button class="btn btn-primary" id="nlPlay">播放加法动画</button>
+          <button class="btn" id="nlSame">同号示例</button>
+          <button class="btn" id="nlDiffDemo">异号示例</button>
+          <button class="btn" id="nlReset">重置</button>
+          <button class="btn" id="nlRandom">随机</button>
+        </div>
+        <div class="readout">
+          <span class="chip c-blue">A = <b id="nlA"></b></span>
+          <span class="chip c-orange">B = <b id="nlB"></b></span>
+          <span class="chip c-gray">|A| = <b id="nlAbsA"></b></span>
+          <span class="chip c-gray">|B| = <b id="nlAbsB"></b></span>
+          <span class="chip c-green">A + B = <b id="nlSum"></b></span>
+          <span class="chip c-red">A − B = <b id="nlDiffV"></b></span>
+        </div>
+        <div class="rule-note" id="nlRule"></div>
+      </div>
+      <p class="explain"><b>小提示：</b>数轴上，一个数的绝对值就是它到原点 0 的距离。加法可以看成在数轴上“走路”：加正数向右走，加负数向左走，最后停下的位置就是运算结果。</p>
+    </section>
+
+    <!-- ==================== 模块二：整式运算（幂的运算） ==================== -->
+    <section class="module" id="module-2">
+      <h2><span class="sec-num">2</span>整式运算（幂的运算）</h2>
+      <div class="formula-bar">
+        <div class="fb-item"><span class="tex" data-tex="a^m \cdot a^n = a^{m+n}">aᵐ · aⁿ = aᵐ⁺ⁿ</span></div>
+      </div>
+      <div class="card">
+        <div class="card-title">方块堆叠：数一数一共有几个 a 相乘</div>
+        <div class="controls" style="gap:20px">
+          <span class="stepper">指数 m<button id="powMMinus">−</button><b id="powMVal">3</b><button id="powMPlus">+</button></span>
+          <span class="stepper">指数 n<button id="powNMinus">−</button><b id="powNVal">2</b><button id="powNPlus">+</button></span>
+          <span class="stepper">底数 a<button id="powAMinus">−</button><b id="powAVal">2</b><button id="powAPlus">+</button></span>
+        </div>
+        <div class="blocks-stage">
+          <div class="stage-item">
+            <div class="block-group" id="powG1"></div>
+            <div class="pow-caption" id="powCap1"></div>
+          </div>
+          <div class="pow-plus" id="powPlus">×</div>
+          <div class="stage-item">
+            <div class="block-group" id="powG2"></div>
+            <div class="pow-caption" id="powCap2"></div>
+          </div>
+        </div>
+        <div class="pow-result" id="powResult"></div>
+        <div class="controls">
+          <button class="btn btn-primary" id="powMerge">合并方块</button>
+          <button class="btn" id="powReset">重置</button>
+          <button class="btn" id="powRandom">随机</button>
+        </div>
+        <div class="pow-expand"><span class="tex" id="powExpand"></span></div>
+        <div class="readout"><span class="chip c-green" id="powVerify"></span></div>
+      </div>
+      <p class="explain"><b>小提示：</b>同底数幂相乘，底数不变，指数相加。因为 a 的 m 次方表示 m 个 a 相乘，a 的 n 次方表示 n 个 a 相乘，合起来一共是 (m+n) 个 a 相乘。</p>
+    </section>
+
+    <!-- ==================== 模块三：乘法公式 ==================== -->
+    <section class="module" id="module-3">
+      <h2><span class="sec-num">3</span>乘法公式</h2>
+      <div class="formula-bar">
+        <div class="fb-item"><span class="tex" data-tex="(a+b)(a-b)=a^2-b^2">(a+b)(a−b) = a² − b²</span></div>
+        <div class="fb-item"><span class="tex" data-tex="(a+b)^2=a^2+2ab+b^2">(a+b)² = a² + 2ab + b²</span></div>
+      </div>
+
+      <!-- 3.1 平方差公式 -->
+      <div class="card">
+        <div class="card-title">3.1 平方差公式：把 L 形剪拼成一个大长方形</div>
+        <div class="slider-row"><label>边长 a</label><input type="range" id="dsqA" min="5" max="10" step="1" value="8"><span class="val-badge" id="dsqAVal">8</span></div>
+        <div class="slider-row"><label>边长 b</label><input type="range" id="dsqB" min="1" max="9" step="1" value="3"><span class="val-badge" id="dsqBVal">3</span></div>
+        <canvas id="dsqCanvas" class="viz" style="height:340px"></canvas>
+        <div class="controls">
+          <button class="btn btn-primary" id="dsqPlay">播放剪拼动画</button>
+          <button class="btn" id="dsqReset">重置</button>
+          <button class="btn" id="dsqRandom">随机</button>
+        </div>
+        <div class="readout">
+          <span class="chip c-blue" id="dsqR1"></span>
+          <span class="chip c-orange" id="dsqR2"></span>
+          <span class="chip c-green" id="dsqOk"></span>
+        </div>
+      </div>
+      <p class="explain"><b>小提示：</b>从边长 a 的正方形中剪去边长 b 的小正方形，剩下的 L 形可以剪开拼成一个长 (a+b)、宽 (a−b) 的长方形。面积没有变，所以 (a+b)(a−b) = a²−b²。</p>
+
+      <!-- 3.2 完全平方公式 -->
+      <div class="card">
+        <div class="card-title">3.2 完全平方公式：大正方形分成四块（移动鼠标或点击色块试试）</div>
+        <div class="slider-row"><label>边长 a</label><input type="range" id="psqA" min="2" max="8" step="1" value="5"><span class="val-badge" id="psqAVal">5</span></div>
+        <div class="slider-row"><label>边长 b</label><input type="range" id="psqB" min="1" max="6" step="1" value="3"><span class="val-badge" id="psqBVal">3</span></div>
+        <canvas id="psqCanvas" class="viz" style="height:340px"></canvas>
+        <div class="fchips" id="psqChips">
+          <span class="fchip">a²</span><span class="fplus">+</span>
+          <span class="fchip">ab</span><span class="fplus">+</span>
+          <span class="fchip">ab</span><span class="fplus">+</span>
+          <span class="fchip">b²</span>
+        </div>
+        <div class="controls">
+          <button class="btn" id="psqReset">重置</button>
+          <button class="btn" id="psqRandom">随机</button>
+        </div>
+        <div class="readout">
+          <span class="chip c-blue" id="psqR1"></span>
+          <span class="chip c-green" id="psqR2"></span>
+          <span class="chip c-gray" id="psqOk"></span>
+        </div>
+      </div>
+      <p class="explain"><b>小提示：</b>边长 (a+b) 的大正方形可以分成四块：a²、ab、ab、b²，加起来正好是 a²+2ab+b²。面积不会骗人，所以 (a+b)² = a²+2ab+b²。</p>
+    </section>
+
+    <!-- ==================== 模块四：一元一次方程 ==================== -->
+    <section class="module" id="module-4">
+      <h2><span class="sec-num">4</span>一元一次方程</h2>
+      <div class="formula-bar">
+        <div class="fb-item"><span class="tex" data-tex="ax+b=c\ (a\ne 0)\ \Rightarrow\ x=\dfrac{c-b}{a}">ax + b = c（a≠0）⇒ x = (c−b)/a</span></div>
+      </div>
+      <div class="card">
+        <div class="card-title">天平平衡演示：两边同时做相同的运算，天平始终保持平衡</div>
+        <div class="slider-row"><label>系数 a</label><input type="range" id="balA" min="1" max="5" step="1" value="2"><span class="val-badge" id="balAVal">2</span></div>
+        <div class="slider-row"><label>常数 b</label><input type="range" id="balB" min="0" max="8" step="1" value="3"><span class="val-badge" id="balBVal">3</span></div>
+        <div class="slider-row"><label>常数 c</label><input type="range" id="balC" min="0" max="16" step="1" value="9"><span class="val-badge" id="balCVal">9</span></div>
+        <div class="eq-display"><span class="tex" id="balEq"></span></div>
+        <canvas id="balCanvas" class="viz" style="height:440px"></canvas>
+        <div class="step-bar">
+          <button class="btn" id="balPrev">上一步</button>
+          <span class="step-dots" id="balDots"><span class="on"></span><span></span><span></span></span>
+          <button class="btn btn-primary" id="balNext">下一步</button>
+          <button class="btn" id="balReset">重置</button>
+          <button class="btn" id="balRandom">随机</button>
+        </div>
+        <div class="readout">
+          <span class="chip c-green" id="balX"></span>
+          <span class="chip c-gray" id="balStepText"></span>
+        </div>
+        <div class="legend-note">■ 蓝色方块 = x（未知数）　● 橙色小球 = 1</div>
+      </div>
+      <p class="explain"><b>小提示：</b>方程就像一架平衡的天平：左右两边相等。两边同时加上、减去、乘或除以同一个不为 0 的数，天平仍然平衡——利用这一点就能一步步求出 x。</p>
+    </section>
+
+    <!-- ==================== 模块五：几何图形初步 ==================== -->
+    <section class="module" id="module-5">
+      <h2><span class="sec-num">5</span>几何图形初步</h2>
+      <div class="formula-bar">
+        <div class="fb-item"><span class="tex" data-tex="\alpha+\beta=90^\circ">α + β = 90°</span><span class="fb-text">互余</span></div>
+        <div class="fb-item"><span class="tex" data-tex="\alpha+\beta=180^\circ">α + β = 180°</span><span class="fb-text">互补</span></div>
+        <div class="fb-item"><span class="tex" data-tex="AM=MB=\dfrac{1}{2}AB">AM = MB = ½AB</span></div>
+      </div>
+
+      <!-- 5.1 可拖动的角 -->
+      <div class="card">
+        <div class="card-title">5.1 角的认识：拖动蓝色控制点，绕顶点旋转</div>
+        <canvas id="angCanvas" class="viz" style="height:250px"></canvas>
+        <div class="controls">
+          <button class="btn" id="angReset">重置</button>
+          <button class="btn" id="angRandom">随机</button>
+        </div>
+        <div class="readout"><span class="chip c-blue" id="angClass"></span></div>
+      </div>
+
+      <!-- 5.2 互余与互补 -->
+      <div class="card">
+        <div class="card-title">5.2 互余与互补：拖动左边的 α，右边的 β 会自动跟上</div>
+        <div class="controls">
+          <button class="btn btn-primary" id="csMode90">互余（和为 90°）</button>
+          <button class="btn" id="csMode180">互补（和为 180°）</button>
+        </div>
+        <canvas id="csCanvas" class="viz" style="height:250px"></canvas>
+        <div class="controls">
+          <button class="btn" id="csReset">重置</button>
+          <button class="btn" id="csRandom">随机</button>
+        </div>
+        <div class="readout">
+          <span class="chip c-blue" id="csAlpha"></span>
+          <span class="chip c-orange" id="csBeta"></span>
+          <span class="chip c-green" id="csSum"></span>
+        </div>
+      </div>
+
+      <!-- 5.3 线段的中点 -->
+      <div class="card">
+        <div class="card-title">5.3 线段的中点：拖动端点 A 或 B，中点 M 自动跟随</div>
+        <canvas id="midCanvas" class="viz" style="height:260px"></canvas>
+        <div class="controls">
+          <button class="btn" id="midReset">重置</button>
+          <button class="btn" id="midRandom">随机</button>
+        </div>
+        <div class="readout">
+          <span class="chip c-blue" id="midAM"></span>
+          <span class="chip c-orange" id="midMB"></span>
+          <span class="chip c-gray" id="midAB"></span>
+          <span class="chip c-green" id="midOk"></span>
+        </div>
+      </div>
+      <p class="explain"><b>小提示：</b>角的大小由两条边张开的程度决定。和为 90° 的两个角互为余角，和为 180° 的两个角互为补角；线段的中点把线段分成长度相等的两段。</p>
+    </section>
+
+    <!-- ==================== 模块六：平面直角坐标系 ==================== -->
+    <section class="module" id="module-6">
+      <h2><span class="sec-num">6</span>平面直角坐标系</h2>
+      <div class="formula-bar">
+        <div class="fb-item"><span class="tex" data-tex="P(x,y)">P(x, y)</span><span class="fb-text">关于 x 轴</span><span class="tex" data-tex="P_1(x,-y)">P₁(x, −y)</span></div>
+        <div class="fb-item"><span class="fb-text">关于 y 轴</span><span class="tex" data-tex="P_2(-x,y)">P₂(−x, y)</span></div>
+        <div class="fb-item"><span class="fb-text">关于原点</span><span class="tex" data-tex="P_3(-x,-y)">P₃(−x, −y)</span></div>
+      </div>
+      <div class="card">
+        <div class="card-title">对称点探索：点击（或拖动）坐标系任意位置放置点 P</div>
+        <canvas id="coordCanvas" class="viz" style="height:440px"></canvas>
+        <div class="controls">
+          <button class="btn" id="coordReset">重置</button>
+          <button class="btn" id="coordRandom">随机</button>
+        </div>
+        <div class="readout">
+          <span class="chip c-blue" id="coordP"></span>
+          <span class="chip c-orange" id="coordP1"></span>
+          <span class="chip c-green" id="coordP2"></span>
+          <span class="chip c-red" id="coordP3"></span>
+        </div>
+        <div class="legend-note">虚线表示对称关系：P 与 P₁ 的连线被 x 轴垂直平分，P 与 P₂ 的连线被 y 轴垂直平分，P 与 P₃ 的连线经过原点。当 P 落在坐标轴上时，部分对称点会重合。</div>
+      </div>
+      <p class="explain"><b>小提示：</b>关于 x 轴对称的点，横坐标相同、纵坐标互为相反数；关于 y 轴对称正好反过来；关于原点对称时，横、纵坐标都互为相反数。</p>
+    </section>
+
+  </main>
+</div>
+
+<!-- KaTeX 主程序（CDN 引入） -->
+<script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+<script>
+'use strict';
+/* ============================================================
+ * 通用工具函数
+ * ============================================================ */
+
+// —— 根据 id 取元素 ——
+const $ = id => document.getElementById(id);
+
+// —— 整数随机数 [a, b] ——
+const randInt = (a, b) => Math.floor(Math.random() * (b - a + 1)) + a;
+
+// —— 数字显示：负号用数学符号 −（U+2212） ——
+const fmt = n => (n < 0 ? '−' + Math.abs(n) : String(n));
+const fmtS = n => (n < 0 ? '−' + Math.abs(n) : '+' + n);
+
+// —— 线性插值与缓动函数 ——
+const lerp = (a, b, t) => a + (b - a) * t;
+const easeInOut = t => (t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2);
+
+// —— 最大公约数（用于约分） ——
+const gcd = (a, b) => (b === 0 ? a : gcd(b, a % b));
+
+// —— 画线段 ——
+function line(ctx, x1, y1, x2, y2){
+  ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
+}
+
+// —— 通用补间动画：duration 毫秒内反复调用 onFrame(t)，结束后调用 onDone ——
+function animate(duration, onFrame, onDone){
+  const t0 = performance.now();
+  function frame(now){
+    const t = Math.min(1, (now - t0) / duration);
+    onFrame(t);
+    if (t < 1) requestAnimationFrame(frame);
+    else if (onDone) onDone();
+  }
+  requestAnimationFrame(frame);
+}
+
+/* ---------- Canvas 高清适配：返回 {ctx, W, H}（W/H 为 CSS 像素） ---------- */
+function fitCanvas(canvas){
+  const dpr = window.devicePixelRatio || 1;
+  const rect = canvas.getBoundingClientRect();
+  const w = Math.max(1, Math.round(rect.width));
+  const h = Math.max(1, Math.round(rect.height));
+  canvas.width = w * dpr;
+  canvas.height = h * dpr;
+  const ctx = canvas.getContext('2d');
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  return { ctx, W: w, H: h };
+}
+
+// —— 指针位置（换算为画布 CSS 像素坐标） ——
+function pointerPos(canvas, e){
+  const r = canvas.getBoundingClientRect();
+  return { x: e.clientX - r.left, y: e.clientY - r.top };
+}
+
+/* ---------- 统一指针事件（鼠标 + 触摸）：down/move/up ---------- */
+function onPointer(canvas, handlers){
+  canvas.addEventListener('pointerdown', e => {
+    e.preventDefault();
+    canvas.setPointerCapture(e.pointerId);
+    if (handlers.down) handlers.down(pointerPos(canvas, e), e);
+  });
+  canvas.addEventListener('pointermove', e => {
+    if (handlers.move) handlers.move(pointerPos(canvas, e), e);
+  });
+  const up = e => { if (handlers.up) handlers.up(pointerPos(canvas, e), e); };
+  canvas.addEventListener('pointerup', up);
+  canvas.addEventListener('pointercancel', up);
+}
+
+/* ---------- 音效：WebAudio 程序化生成，无需外部音频文件 ---------- */
+let audioCtx = null, muted = false;
+function ensureAudio(){
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+}
+function beep(freq, dur, type, vol){
+  if (muted) return;
+  try{
+    ensureAudio();
+    const o = audioCtx.createOscillator(), g = audioCtx.createGain();
+    o.type = type || 'sine';
+    o.frequency.value = freq || 660;
+    const t = audioCtx.currentTime;
+    g.gain.setValueAtTime(vol || 0.12, t);
+    g.gain.exponentialRampToValueAtTime(0.001, t + (dur || 0.08));
+    o.connect(g).connect(audioCtx.destination);
+    o.start(); o.stop(t + (dur || 0.08) + 0.02);
+  }catch(e){ /* 音频不可用时静默失败 */ }
+}
+const clickSound = () => beep(520, 0.05, 'sine', 0.08);
+const success = () => [523.25, 659.25, 783.99].forEach((f, i) => setTimeout(() => beep(f, 0.13, 'triangle', 0.16), i * 95));
+
+/* ---------- KaTeX 渲染（失败时回退为纯文本公式） ---------- */
+function renderTex(el, tex, plain){
+  if (!el) return;
+  if (window.katex){
+    try{ katex.render(tex, el, { throwOnError: false }); return; }catch(e){ /* 落到回退 */ }
+  }
+  if (plain !== undefined) el.textContent = plain;
+  else if (!el.textContent.trim()) el.textContent = tex;
+}
+
+/* ---------- 数值变化闪烁动画 ---------- */
+function flash(el){
+  if (!el) return;
+  el.classList.remove('flash');
+  void el.offsetWidth; // 强制重排以重启动画
+  el.classList.add('flash');
+}
+
+/* ---------- 所有模块的重绘函数登记表（窗口尺寸变化时调用） ---------- */
+const redrawAll = [];
+let resizeTimer = null;
+window.addEventListener('resize', () => {
+  clearTimeout(resizeTimer);
+  resizeTimer = setTimeout(() => redrawAll.forEach(f => f()), 120);
+});
+
+/* ============================================================
+ * 顶部：静音开关 / 导航切换（支持 #hash 定位，便于截图测试）
+ * ============================================================ */
+$('muteBtn').addEventListener('click', () => {
+  muted = !muted;
+  $('muteBtn').textContent = muted ? '音效：关' : '音效：开';
+  if (!muted) clickSound();
+});
+
+const navBtns = Array.from(document.querySelectorAll('.nav-btn'));
+function activateModule(id){
+  navBtns.forEach(b => b.classList.toggle('active', b.dataset.target === id));
+  document.querySelectorAll('.module').forEach(m => m.classList.toggle('active', m.id === id));
+  // 模块从隐藏变为显示后，画布需要重新适配尺寸
+  requestAnimationFrame(() => redrawAll.forEach(f => f()));
+}
+navBtns.forEach(b => b.addEventListener('click', () => {
+  clickSound();
+  history.replaceState(null, '', '#' + b.dataset.target);
+  activateModule(b.dataset.target);
+}));
+function activateFromHash(){
+  if (location.hash && document.getElementById(location.hash.slice(1))){
+    activateModule(location.hash.slice(1));
+  }
+}
+activateFromHash();
+window.addEventListener('hashchange', activateFromHash);
+
+// —— 渲染所有静态公式 ——
+document.querySelectorAll('.tex[data-tex]').forEach(el => renderTex(el, el.dataset.tex));
+
+/* ============================================================
+ * 模块一：有理数运算 —— 可交互数轴 + 加法动画
+ * ============================================================ */
+(function initNumberLine(){
+  const canvas = $('nlCanvas');
+  let view = fitCanvas(canvas);
+  const st = { A: -3, B: 5 };   // 两个可拖动的点
+  let drag = null;              // 当前拖动的目标 'A' | 'B'
+  let anim = null;              // 加法动画状态 {t, f1}
+  let resultPulse = null;       // 结果点高亮进度 0~1（1 表示常亮）
+
+  const els = {
+    A: $('nlA'), B: $('nlB'), absA: $('nlAbsA'), absB: $('nlAbsB'),
+    sum: $('nlSum'), diff: $('nlDiffV'), rule: $('nlRule')
+  };
+
+  // —— 布局：范围 R 自适应（保证 A、B、A+B 都在数轴内） ——
+  function metrics(){
+    const R = Math.max(10, Math.abs(st.A) + 1, Math.abs(st.B) + 1, Math.abs(st.A + st.B) + 2);
+    const m = 40;
+    return { R, x0: m, x1: view.W - m, axisY: view.H * 0.62, unit: (view.W - 2 * m) / (2 * R) };
+  }
+  const X = (v, mt) => mt.x0 + (v + mt.R) * mt.unit;
+
+  // —— 画一根加数箭头（从 v1 走到 v2） ——
+  function drawArrowLine(mt, v1, v2, color, label){
+    const y = mt.axisY - 46;
+    const x1 = X(v1, mt), x2 = X(v2, mt);
+    if (Math.abs(x2 - x1) > 2){
+      ctx_line(x1, y, x2, y, color, 5);
+      const dir = x2 >= x1 ? 1 : -1;
+      view.ctx.fillStyle = color;
+      view.ctx.beginPath();
+      view.ctx.moveTo(x2 + dir * 9, y);
+      view.ctx.lineTo(x2 - dir * 4, y - 7);
+      view.ctx.lineTo(x2 - dir * 4, y + 7);
+      view.ctx.closePath(); view.ctx.fill();
+    }
+    view.ctx.fillStyle = color;
+    view.ctx.font = 'bold 13px system-ui';
+    view.ctx.textAlign = 'center'; view.ctx.textBaseline = 'bottom';
+    view.ctx.fillText(label, (x1 + x2) / 2, y - 9);
+  }
+  function ctx_line(x1, y1, x2, y2, color, width){
+    view.ctx.strokeStyle = color; view.ctx.lineWidth = width; view.ctx.lineCap = 'round';
+    line(view.ctx, x1, y1, x2, y2);
+  }
+
+  function draw(){
+    const { ctx, W, H } = view;
+    if (W < 40) return; // 隐藏时不绘制
+    ctx.clearRect(0, 0, W, H);
+    const mt = metrics();
+
+    // —— 轴线与右端箭头 ——
+    ctx_line(mt.x0, mt.axisY, mt.x1, mt.axisY, '#93A5C9', 2);
+    ctx.fillStyle = '#93A5C9';
+    ctx.beginPath();
+    ctx.moveTo(mt.x1 + 9, mt.axisY);
+    ctx.lineTo(mt.x1 - 2, mt.axisY - 5);
+    ctx.lineTo(mt.x1 - 2, mt.axisY + 5);
+    ctx.closePath(); ctx.fill();
+
+    // —— 刻度（过密时每隔 2 或 5 标一个数字） ——
+    const step = mt.unit >= 20 ? 1 : (mt.unit >= 11 ? 2 : 5);
+    ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+    for (let v = -mt.R; v <= mt.R; v++){
+      const x = X(v, mt);
+      ctx_line(x, mt.axisY - 5, x, mt.axisY + 5, '#B9C6E0', 1.5);
+      if (v % step === 0){
+        ctx.fillStyle = v === 0 ? '#2B3A55' : '#8A98B8';
+        ctx.font = (v === 0 ? 'bold ' : '') + '11px system-ui';
+        ctx.fillText(String(v), x, mt.axisY + 9);
+      }
+    }
+
+    // —— 加法动画：先走第一个加数，再接着走第二个加数 ——
+    if (anim){
+      const total = Math.abs(st.A) + Math.abs(st.B);
+      if (total > 0){
+        const f1 = Math.abs(st.A) / total; // 第一段动画所占时长比例
+        if (anim.t <= f1){
+          drawArrowLine(mt, 0, st.A * (anim.t / f1), '#5B8DEF', fmtS(st.A));
+        }else{
+          drawArrowLine(mt, 0, st.A, '#5B8DEF', fmtS(st.A));
+          drawArrowLine(mt, st.A, st.A + st.B * ((anim.t - f1) / (1 - f1)), '#FF9F43', fmtS(st.B));
+        }
+      }
+    }
+
+    // —— 结果点高亮 ——
+    if (resultPulse !== null){
+      const x = X(st.A + st.B, mt), p = resultPulse;
+      ctx.beginPath(); ctx.arc(x, mt.axisY, 14 + (1 - p) * 26, 0, Math.PI * 2);
+      ctx.strokeStyle = 'rgba(46,204,113,' + (0.9 - p * 0.5) + ')'; ctx.lineWidth = 3; ctx.stroke();
+      ctx.beginPath(); ctx.arc(x, mt.axisY, 10, 0, Math.PI * 2);
+      ctx.fillStyle = '#2ECC71'; ctx.fill();
+      ctx.lineWidth = 3; ctx.strokeStyle = '#fff'; ctx.stroke();
+      ctx.fillStyle = '#157F44'; ctx.font = 'bold 14px system-ui';
+      ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
+      ctx.fillText('A + B = ' + fmt(st.A + st.B), x, mt.axisY - 30);
+    }
+
+    // —— 两个可拖动的点 ——
+    const drawPoint = (v, color, name) => {
+      const x = X(v, mt);
+      ctx.beginPath(); ctx.arc(x, mt.axisY, 12, 0, Math.PI * 2);
+      ctx.fillStyle = color; ctx.fill();
+      ctx.lineWidth = 3; ctx.strokeStyle = '#fff'; ctx.stroke();
+      ctx.fillStyle = '#2B3A55'; ctx.font = 'bold 13px system-ui';
+      ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
+      ctx.fillText(name + ' = ' + fmt(v), x, mt.axisY - 17);
+    };
+    drawPoint(st.A, '#5B8DEF', 'A');
+    drawPoint(st.B, '#FF9F43', 'B');
+  }
+
+  // —— 法则提示文字 ——
+  function ruleText(){
+    const { A, B } = st;
+    if (A === 0 || B === 0) return '有一个加数是 0：任何数加 0 仍得这个数。';
+    if (A * B > 0) return '同号两数相加：取相同的符号，并把绝对值相加。';
+    return '异号两数相加：取绝对值较大的加数的符号，并用较大的绝对值减去较小的绝对值。';
+  }
+
+  function setChip(el, txt){ el.textContent = txt; flash(el.closest('.chip') || el); }
+  function updateReadouts(){
+    setChip(els.A, fmt(st.A)); setChip(els.B, fmt(st.B));
+    setChip(els.absA, fmt(Math.abs(st.A))); setChip(els.absB, fmt(Math.abs(st.B)));
+    setChip(els.sum, fmt(st.A + st.B)); setChip(els.diff, fmt(st.A - st.B));
+    els.rule.textContent = '加法法则：' + ruleText();
+  }
+
+  function afterChange(){ anim = null; resultPulse = null; updateReadouts(); draw(); }
+
+  // —— 播放 A+B 的行走动画 ——
+  function playAnim(){
+    const total = Math.abs(st.A) + Math.abs(st.B);
+    resultPulse = null;
+    if (total === 0){ finishPulse(); return; } // 0 + 0 直接高亮原点
+    const dur = Math.min(3400, Math.max(900, total * 230));
+    animate(dur, t => { anim = { t }; draw(); }, () => { anim = null; success(); finishPulse(); });
+  }
+  function finishPulse(){
+    const t0 = performance.now();
+    (function pulse(now){
+      const p = (now - t0) / 1200;
+      resultPulse = Math.min(1, p);
+      draw();
+      if (p < 1) requestAnimationFrame(pulse);
+    })(t0);
+  }
+
+  // —— 拖动交互 ——
+  onPointer(canvas, {
+    down(p){
+      const mt = metrics();
+      const dA = Math.abs(p.x - X(st.A, mt)), dB = Math.abs(p.x - X(st.B, mt));
+      if (Math.min(dA, dB) < 26 && Math.abs(p.y - mt.axisY) < 34) drag = dA <= dB ? 'A' : 'B';
+    },
+    move(p){
+      if (!drag) return;
+      const mt = metrics();
+      let v = Math.round((p.x - mt.x0) / mt.unit - mt.R);
+      v = Math.max(-mt.R, Math.min(mt.R, v));
+      if (v !== st[drag]){
+        st[drag] = v;
+        afterChange();
+        beep(480 + (v + mt.R) * 22, 0.03, 'sine', 0.05);
+      }
+    },
+    up(){ drag = null; }
+  });
+
+  // —— 按钮 ——
+  $('nlPlay').addEventListener('click', playAnim);
+  $('nlSame').addEventListener('click', () => { st.A = 4; st.B = 3; afterChange(); playAnim(); });
+  $('nlDiffDemo').addEventListener('click', () => { st.A = 6; st.B = -9; afterChange(); playAnim(); });
+  $('nlReset').addEventListener('click', () => { st.A = -3; st.B = 5; afterChange(); clickSound(); });
+  $('nlRandom').addEventListener('click', () => {
+    st.A = randInt(-9, 9); st.B = randInt(-9, 9);
+    if (st.A === 0 && st.B === 0) st.B = 4;
+    afterChange(); clickSound();
+  });
+
+  function refit(){ view = fitCanvas(canvas); draw(); }
+  redrawAll.push(refit);
+  updateReadouts(); draw();
+})();
+
+/* ============================================================
+ * 模块二：整式运算（幂的运算）—— 方块堆叠合并
+ * ============================================================ */
+(function initPower(){
+  const st = { m: 3, n: 2, a: 2 };
+  let merged = false;
+  const g1 = $('powG1'), g2 = $('powG2'), plusEl = $('powPlus'), resultEl = $('powResult');
+
+  // —— 指数转 Unicode 上标（KaTeX 不可用时的回退显示） ——
+  const supMap = { '0':'⁰','1':'¹','2':'²','3':'³','4':'⁴','5':'⁵','6':'⁶','7':'⁷','8':'⁸','9':'⁹','+':'⁺','m':'ᵐ','n':'ⁿ' };
+  const sup = s => String(s).split('').map(c => supMap[c] || c).join('');
+
+  function makeBlock(orange){
+    const d = document.createElement('div');
+    d.className = 'block' + (orange ? ' b2' : '');
+    d.textContent = 'a';
+    return d;
+  }
+
+  // —— 重新搭建方块（两组：m 个蓝块 + n 个橙块） ——
+  function build(){
+    g1.innerHTML = ''; g2.innerHTML = '';
+    for (let i = 0; i < st.m; i++) g1.appendChild(makeBlock(false));
+    for (let i = 0; i < st.n; i++) g2.appendChild(makeBlock(true));
+    $('powCap1').textContent = 'a 的 ' + st.m + ' 次方（' + st.m + ' 个 a 相乘）';
+    $('powCap2').textContent = 'a 的 ' + st.n + ' 次方（' + st.n + ' 个 a 相乘）';
+    $('powMVal').textContent = st.m; $('powNVal').textContent = st.n; $('powAVal').textContent = st.a;
+    plusEl.style.opacity = 1;
+    resultEl.classList.remove('show');
+    merged = false;
+    $('powMerge').disabled = false;
+    updateTex();
+  }
+
+  // —— 公式与数值验证 ——
+  function updateTex(){
+    const dots = k => Array(k).fill('a').join(' \\cdot ');
+    renderTex($('powExpand'),
+      'a^{' + st.m + '} \\times a^{' + st.n + '} = (' + dots(st.m) + ') \\times (' + dots(st.n) + ') = a^{' + (st.m + st.n) + '}',
+      'a' + sup(st.m) + ' × a' + sup(st.n) + ' = (' + Array(st.m).fill('a').join('·') + ') × (' + Array(st.n).fill('a').join('·') + ') = a' + sup(st.m + st.n));
+    const p1 = Math.pow(st.a, st.m), p2 = Math.pow(st.a, st.n), p3 = Math.pow(st.a, st.m + st.n);
+    $('powVerify').innerHTML = '数值验证（a=' + st.a + '）：' + st.a + '<sup>' + st.m + '</sup> × ' + st.a + '<sup>' + st.n + '</sup> = ' + p1 + ' × ' + p2 + ' = ' + (p1 * p2) + '，' + st.a + '<sup>' + (st.m + st.n) + '</sup> = ' + p3 + '　✓ 相等';
+  }
+
+  // —— 合并动画：所有方块依次变绿 ——
+  $('powMerge').addEventListener('click', () => {
+    if (merged) return;
+    merged = true;
+    $('powMerge').disabled = true;
+    const blocks = Array.from(g1.children).concat(Array.from(g2.children));
+    plusEl.style.opacity = 0;
+    blocks.forEach((b, i) => setTimeout(() => {
+      b.classList.add('merged');
+      beep(600 + i * 30, 0.05, 'sine', 0.06);
+    }, i * 70));
+    setTimeout(() => {
+      resultEl.textContent = '合并完成：一共 ' + st.m + ' + ' + st.n + ' = ' + (st.m + st.n) + ' 个 a 相乘 → a 的 ' + (st.m + st.n) + ' 次方';
+      resultEl.classList.add('show');
+      success();
+    }, blocks.length * 70 + 350);
+  });
+
+  // —— 步进器（m、n 范围 1~8，a 范围 2~5） ——
+  function bindStepper(minusId, plusId, key, min, max){
+    $(minusId).addEventListener('click', () => { if (st[key] > min){ st[key]--; build(); clickSound(); } });
+    $(plusId).addEventListener('click', () => { if (st[key] < max){ st[key]++; build(); clickSound(); } });
+  }
+  bindStepper('powMMinus', 'powMPlus', 'm', 1, 8);
+  bindStepper('powNMinus', 'powNPlus', 'n', 1, 8);
+  bindStepper('powAMinus', 'powAPlus', 'a', 2, 5);
+
+  $('powReset').addEventListener('click', () => { st.m = 3; st.n = 2; st.a = 2; build(); clickSound(); });
+  $('powRandom').addEventListener('click', () => { st.m = randInt(1, 8); st.n = randInt(1, 8); st.a = randInt(2, 5); build(); clickSound(); });
+
+  build();
+})();
+
+/* ============================================================
+ * 模块三：乘法公式（几何面积法）
+ * ============================================================ */
+
+/* ---------- 3.1 平方差公式：(a+b)(a−b) = a²−b² ---------- */
+(function initDiffSquare(){
+  const canvas = $('dsqCanvas');
+  let view = fitCanvas(canvas);
+  const st = { a: 8, b: 3, t: 0 }; // t：剪拼动画进度 0~1
+  let animating = false;
+
+  function draw(){
+    const { ctx, W, H } = view;
+    if (W < 40) return;
+    ctx.clearRect(0, 0, W, H);
+    const a = st.a, b = st.b, t = st.t;
+    const s = Math.min((W - 100) / (a + b), (H - 120) / a); // 每单位长度像素
+    const ox = (W - (a + b) * s) / 2, oy = 46;
+
+    // —— 原来的大正方形 a×a（灰色虚线框） ——
+    ctx.setLineDash([6, 5]); ctx.strokeStyle = '#A9B8D8'; ctx.lineWidth = 1.5;
+    ctx.strokeRect(ox, oy, a * s, a * s);
+    ctx.setLineDash([]);
+
+    // —— 被减去的 b×b 小正方形（右上角，红色示意） ——
+    ctx.fillStyle = 'rgba(231,76,60,.15)';
+    ctx.fillRect(ox + (a - b) * s, oy, b * s, b * s);
+    ctx.setLineDash([4, 4]); ctx.strokeStyle = '#E74C3C'; ctx.lineWidth = 1.5;
+    ctx.strokeRect(ox + (a - b) * s, oy, b * s, b * s);
+    ctx.setLineDash([]);
+    ctx.fillStyle = '#C0392B'; ctx.font = 'bold 13px system-ui';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText('−b²', ox + (a - b / 2) * s, oy + b * s / 2);
+
+    // —— 矩形 1：a × (a−b)，固定不动（蓝色） ——
+    ctx.fillStyle = 'rgba(91,141,239,.85)';
+    ctx.fillRect(ox, oy + b * s, a * s, (a - b) * s);
+    ctx.lineWidth = 2; ctx.strokeStyle = '#3F6FD1';
+    ctx.strokeRect(ox, oy + b * s, a * s, (a - b) * s);
+
+    // —— 矩形 2：(a−b) × b，随动画旋转 90° 并移到右侧（橙色） ——
+    const w = (a - b) * s, h = b * s;
+    const c0 = { x: ox + w / 2, y: oy + h / 2 };                          // 起点中心（左上）
+    const c1 = { x: ox + a * s + h / 2, y: oy + b * s + w / 2 };          // 终点中心（右侧）
+    const cx = lerp(c0.x, c1.x, t), cy = lerp(c0.y, c1.y, t);
+    ctx.save();
+    ctx.translate(cx, cy);
+    ctx.rotate(t * Math.PI / 2);                                          // 0° → 90°
+    ctx.fillStyle = 'rgba(255,159,67,.9)';
+    ctx.fillRect(-w / 2, -h / 2, w, h);
+    ctx.lineWidth = 2; ctx.strokeStyle = '#E08A2D';
+    ctx.strokeRect(-w / 2, -h / 2, w, h);
+    ctx.restore();
+
+    // —— 面积文字（始终水平绘制，避免随矩形旋转） ——
+    ctx.fillStyle = '#fff'; ctx.font = 'bold 13px system-ui';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    if (a * s > 60 && (a - b) * s > 26)
+      ctx.fillText('a(a−b) = ' + a * (a - b), ox + a * s / 2, oy + b * s + (a - b) * s / 2);
+    if (Math.min(w, h) > 22)
+      ctx.fillText('b(a−b) = ' + b * (a - b), cx, cy);
+
+    // —— 尺寸标注 ——
+    ctx.fillStyle = '#7A89A8'; ctx.font = '12px system-ui';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
+    ctx.fillText('a−b', ox + (a - b) * s / 2, oy - 6);
+    ctx.fillText('b', ox + (a - b / 2) * s, oy - 6);
+    ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+    ctx.fillText('b', ox - 8, oy + b * s / 2);
+    ctx.fillText('a−b', ox - 8, oy + b * s + (a - b) * s / 2);
+
+    // —— 拼好后：整体长宽标注 ——
+    if (t > 0.98){
+      ctx.fillStyle = '#2B3A55'; ctx.font = 'bold 13px system-ui';
+      ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+      ctx.fillText('长 = a + b = ' + (a + b), ox + (a + b) * s / 2, oy + a * s + 8);
+      ctx.save();
+      ctx.translate(ox + (a + b) * s + 16, oy + b * s + (a - b) * s / 2);
+      ctx.rotate(Math.PI / 2);
+      ctx.textBaseline = 'middle';
+      ctx.fillText('宽 = a − b = ' + (a - b), 0, 0);
+      ctx.restore();
+    }
+  }
+
+  function updateReadouts(){
+    const a = st.a, b = st.b;
+    $('dsqR1').textContent = 'a² − b² = ' + (a * a) + ' − ' + (b * b) + ' = ' + (a * a - b * b);
+    $('dsqR2').textContent = '(a+b)(a−b) = ' + (a + b) + ' × ' + (a - b) + ' = ' + ((a + b) * (a - b));
+    $('dsqOk').textContent = '✓ 两者相等';
+    $('dsqAVal').textContent = a; $('dsqBVal').textContent = b;
+  }
+  function refresh(){ st.t = 0; updateReadouts(); draw(); }
+
+  $('dsqPlay').addEventListener('click', () => {
+    if (animating) return;
+    animating = true; st.t = 0; draw();
+    animate(1500, p => { st.t = easeInOut(p); draw(); }, () => { animating = false; success(); });
+  });
+  $('dsqA').addEventListener('input', e => {
+    st.a = +e.target.value;
+    if (st.b > st.a - 1){ st.b = st.a - 1; $('dsqB').value = st.b; } // 保证 a > b
+    refresh();
+  });
+  $('dsqB').addEventListener('input', e => {
+    st.b = +e.target.value;
+    if (st.b > st.a - 1){ st.b = st.a - 1; e.target.value = st.b; }
+    refresh();
+  });
+  $('dsqReset').addEventListener('click', () => {
+    st.a = 8; st.b = 3; $('dsqA').value = 8; $('dsqB').value = 3; refresh(); clickSound();
+  });
+  $('dsqRandom').addEventListener('click', () => {
+    st.a = randInt(5, 10); st.b = randInt(1, st.a - 1);
+    $('dsqA').value = st.a; $('dsqB').value = st.b; refresh(); clickSound();
+  });
+
+  function refit(){ view = fitCanvas(canvas); draw(); }
+  redrawAll.push(refit);
+  updateReadouts(); draw();
+})();
+
+/* ---------- 3.2 完全平方公式：(a+b)² = a²+2ab+b² ---------- */
+(function initPerfectSquare(){
+  const canvas = $('psqCanvas');
+  let view = fitCanvas(canvas);
+  const st = { a: 5, b: 3, active: -1 }; // active：当前高亮的区域 0~3
+  const chips = Array.from(document.querySelectorAll('#psqChips .fchip'));
+  const chipColors = ['blue', 'orange', 'orange', 'green'];
+
+  function geom(){
+    const { W, H } = view;
+    const s = Math.min((W - 110) / (st.a + st.b), (H - 110) / (st.a + st.b));
+    return { s, ox: (W - (st.a + st.b) * s) / 2, oy: (H - (st.a + st.b) * s) / 2 + 6 };
+  }
+
+  function draw(){
+    const { ctx, W, H } = view;
+    if (W < 40) return;
+    ctx.clearRect(0, 0, W, H);
+    const a = st.a, b = st.b, { s, ox, oy } = geom();
+    // —— 四个区域：a²、ab、ab、b² ——
+    const regs = [
+      { x: 0, y: 0, w: a, h: a, fill: 'rgba(91,141,239,.88)', line: '#3F6FD1', txt: 'a² = ' + a * a },
+      { x: a, y: 0, w: b, h: a, fill: 'rgba(255,159,67,.92)', line: '#E08A2D', txt: 'ab = ' + a * b },
+      { x: 0, y: a, w: a, h: b, fill: 'rgba(255,179,102,.85)', line: '#E08A2D', txt: 'ab = ' + a * b },
+      { x: a, y: a, w: b, h: b, fill: 'rgba(46,204,113,.88)', line: '#1E9E54', txt: 'b² = ' + b * b }
+    ];
+    regs.forEach((r, i) => {
+      const X0 = ox + r.x * s, Y0 = oy + r.y * s, W0 = r.w * s, H0 = r.h * s;
+      ctx.fillStyle = r.fill;
+      ctx.fillRect(X0, Y0, W0, H0);
+      if (st.active === i){ // 高亮：白色内边框
+        ctx.lineWidth = 4; ctx.strokeStyle = '#fff';
+        ctx.strokeRect(X0 + 3, Y0 + 3, W0 - 6, H0 - 6);
+      }
+      ctx.lineWidth = 2; ctx.strokeStyle = r.line;
+      ctx.strokeRect(X0, Y0, W0, H0);
+      if (W0 > 46 && H0 > 30){
+        ctx.fillStyle = '#fff'; ctx.font = 'bold 14px system-ui';
+        ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.fillText(r.txt, X0 + W0 / 2, Y0 + H0 / 2);
+      }
+    });
+    // —— 外边尺寸标注 ——
+    ctx.fillStyle = '#7A89A8'; ctx.font = '12px system-ui';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
+    ctx.fillText('a', ox + a * s / 2, oy - 6);
+    ctx.fillText('b', ox + a * s + b * s / 2, oy - 6);
+    ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+    ctx.fillText('a', ox - 8, oy + a * s / 2);
+    ctx.fillText('b', ox - 8, oy + a * s + b * s / 2);
+  }
+
+  // —— 指针位置 → 区域编号 ——
+  function regionAt(p){
+    const a = st.a, b = st.b, { s, ox, oy } = geom();
+    const rx = (p.x - ox) / s, ry = (p.y - oy) / s;
+    if (rx < 0 || ry < 0 || rx > a + b || ry > a + b) return -1;
+    return ry < a ? (rx < a ? 0 : 1) : (rx < a ? 2 : 3);
+  }
+  function setActive(i){
+    if (i === st.active) return;
+    st.active = i;
+    chips.forEach((c, j) => { c.className = 'fchip' + (j === i ? ' on-' + chipColors[j] : ''); });
+    draw();
+  }
+  canvas.addEventListener('pointermove', e => setActive(regionAt(pointerPos(canvas, e))));
+  canvas.addEventListener('pointerdown', e => { setActive(regionAt(pointerPos(canvas, e))); clickSound(); });
+  canvas.addEventListener('pointerleave', () => setActive(-1));
+
+  function updateReadouts(){
+    const a = st.a, b = st.b;
+    $('psqR1').textContent = '(a+b)² = ' + (a + b) + '² = ' + Math.pow(a + b, 2);
+    $('psqR2').textContent = 'a² + ab + ab + b² = ' + (a * a) + ' + ' + (a * b) + ' + ' + (a * b) + ' + ' + (b * b) + ' = ' + (a * a + 2 * a * b + b * b);
+    $('psqOk').textContent = '✓ 相等';
+    $('psqAVal').textContent = a; $('psqBVal').textContent = b;
+  }
+  function refresh(){ updateReadouts(); draw(); }
+
+  $('psqA').addEventListener('input', e => { st.a = +e.target.value; refresh(); });
+  $('psqB').addEventListener('input', e => { st.b = +e.target.value; refresh(); });
+  $('psqReset').addEventListener('click', () => {
+    st.a = 5; st.b = 3; $('psqA').value = 5; $('psqB').value = 3; refresh(); clickSound();
+  });
+  $('psqRandom').addEventListener('click', () => {
+    st.a = randInt(2, 8); st.b = randInt(1, 6);
+    $('psqA').value = st.a; $('psqB').value = st.b; refresh(); clickSound();
+  });
+
+  function refit(){ view = fitCanvas(canvas); draw(); }
+  redrawAll.push(refit);
+  updateReadouts(); draw();
+})();
+
+/* ============================================================
+ * 模块四：一元一次方程 —— 天平平衡演示
+ * ============================================================ */
+(function initBalance(){
+  const canvas = $('balCanvas');
+  let view = fitCanvas(canvas);
+  const st = { a: 2, b: 3, c: 9, step: 0 }; // step：0 原方程 / 1 移项后 / 2 化系数为 1 后
+  let rock = 1;          // 天平摇摆进度（1 = 静止）
+  let itemsAlpha = 1;    // 物品淡入淡出
+  let flyList = null;    // 移项时正在飞走的小球
+  let flyP = 0;
+  let busy = false;      // 动画进行中禁止切换步骤
+
+  // —— 当前方程的解 ——
+  const xVal = () => (st.c - st.b) / st.a;
+  const trim2 = x => String(Math.round(x * 100) / 100);
+  function xStr(){
+    const v = st.c - st.b, a = st.a;
+    if (v % a === 0) return String(v / a);
+    const g = gcd(v, a);
+    return (v / g) + '/' + (a / g) + '（≈' + trim2(v / a) + '）';
+  }
+
+  // —— 布局参数 ——
+  function layout(){
+    const W = view.W;
+    return { cx: W / 2, beamY: 92, bh: Math.min(W * 0.30, 180), panY: 240 };
+  }
+  // —— 托盘上物品的摆放位置（每行 4 个，向上堆叠） ——
+  function itemPositions(count, panX, panY){
+    const per = 4, gap = 30, pos = [];
+    for (let i = 0; i < count; i++){
+      const row = Math.floor(i / per), col = i % per;
+      const rowCount = Math.min(per, count - row * per);
+      const rowW = (rowCount - 1) * gap;
+      pos.push({ x: panX - rowW / 2 + col * gap, y: panY - 22 - row * gap });
+    }
+    return pos;
+  }
+  // —— 各步骤下两个托盘的内容 ——
+  function panContents(){
+    if (st.step === 0) return { blocks: st.a, ballsL: st.b, ballsR: st.c };
+    if (st.step === 1) return { blocks: st.a, ballsL: 0, ballsR: st.c - st.b };
+    return { blocks: 1, ballsL: 0, ballsR: (st.c - st.b) / st.a };
+  }
+
+  function drawBlock(ctx, x, y){
+    ctx.fillStyle = '#5B8DEF';
+    ctx.beginPath();
+    ctx.roundRect(x - 13, y - 13, 26, 26, 6);
+    ctx.fill();
+    ctx.lineWidth = 2; ctx.strokeStyle = '#3F6FD1'; ctx.stroke();
+    ctx.fillStyle = '#fff'; ctx.font = 'bold 13px system-ui';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText('x', x, y + 1);
+  }
+  function drawBall(ctx, x, y){
+    ctx.beginPath(); ctx.arc(x, y, 11, 0, Math.PI * 2);
+    ctx.fillStyle = '#FF9F43'; ctx.fill();
+    ctx.lineWidth = 2; ctx.strokeStyle = '#E08A2D'; ctx.stroke();
+  }
+  // —— 分数个小球：按扇形比例填充 ——
+  function drawPartialBall(ctx, x, y, frac){
+    ctx.beginPath(); ctx.arc(x, y, 11, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(255,159,67,.2)'; ctx.fill();
+    ctx.beginPath(); ctx.moveTo(x, y);
+    ctx.arc(x, y, 11, -Math.PI / 2, -Math.PI / 2 + frac * Math.PI * 2);
+    ctx.closePath(); ctx.fillStyle = 'rgba(255,159,67,.9)'; ctx.fill();
+    ctx.beginPath(); ctx.arc(x, y, 11, 0, Math.PI * 2);
+    ctx.lineWidth = 2; ctx.strokeStyle = '#E08A2D'; ctx.stroke();
+  }
+
+  function draw(){
+    const { ctx, W, H } = view;
+    if (W < 40) return;
+    ctx.clearRect(0, 0, W, H);
+    const L = layout();
+
+    // —— 支点三角形（固定不动） ——
+    ctx.fillStyle = '#8A98B8';
+    ctx.beginPath();
+    ctx.moveTo(L.cx - 26, L.beamY + 72);
+    ctx.lineTo(L.cx + 26, L.beamY + 72);
+    ctx.lineTo(L.cx, L.beamY + 4);
+    ctx.closePath(); ctx.fill();
+
+    // —— 摇摆的横梁系统（横梁 + 吊绳 + 托盘 + 物品） ——
+    const ang = 0.14 * (1 - rock) * Math.sin(rock * Math.PI * 4);
+    ctx.save();
+    ctx.translate(L.cx, L.beamY);
+    ctx.rotate(ang);
+    ctx.translate(-L.cx, -L.beamY);
+
+    ctx.strokeStyle = '#5B8DEF'; ctx.lineWidth = 6; ctx.lineCap = 'round';
+    line(ctx, L.cx - L.bh, L.beamY, L.cx + L.bh, L.beamY);
+
+    [L.cx - L.bh, L.cx + L.bh].forEach(px => {
+      ctx.strokeStyle = '#93A5C9'; ctx.lineWidth = 2;
+      line(ctx, px, L.beamY, px, L.panY - 8);
+      ctx.beginPath(); ctx.arc(px, L.panY - 8, 56, 0, Math.PI, false); // 半圆托盘
+      ctx.fillStyle = '#DEE8FD'; ctx.fill();
+      ctx.lineWidth = 2.5; ctx.strokeStyle = '#7A9BE8'; ctx.stroke();
+    });
+
+    // —— 托盘上的物品 ——
+    const cont = panContents();
+    ctx.globalAlpha = itemsAlpha;
+    // 左盘：a 个 x 方块 + b 个小球
+    const lp = itemPositions(cont.blocks + cont.ballsL, L.cx - L.bh, L.panY);
+    let idx = 0;
+    for (let i = 0; i < cont.blocks; i++) drawBlock(ctx, lp[idx].x, lp[idx++].y);
+    for (let i = 0; i < cont.ballsL; i++){
+      const p = lp[idx++];
+      if (!flyList) drawBall(ctx, p.x, p.y); // 移项动画中左盘小球全部在飞
+    }
+    // 右盘：c 个小球（步骤 2 时可能是分数个）
+    const total = Math.ceil(cont.ballsR);
+    const rp = itemPositions(total, L.cx + L.bh, L.panY);
+    for (let i = 0; i < total; i++){
+      if (flyList && i < st.b) continue; // 前 b 个正在飞走
+      if (i < Math.floor(cont.ballsR)) drawBall(ctx, rp[i].x, rp[i].y);
+      else drawPartialBall(ctx, rp[i].x, rp[i].y, cont.ballsR - Math.floor(cont.ballsR));
+    }
+    ctx.globalAlpha = 1;
+
+    // —— 正在飞走的小球（向上飘出并淡出） ——
+    if (flyList){
+      ctx.globalAlpha = 1 - flyP;
+      flyList.forEach(f => drawBall(ctx, f.x, f.y - 80 * flyP));
+      ctx.globalAlpha = 1;
+    }
+    ctx.restore();
+
+    drawNumberLine(ctx, W);
+  }
+
+  // —— 底部：解在数轴上的位置 ——
+  function drawNumberLine(ctx, W){
+    const y = 404, x0 = 30, x1 = W - 30;
+    const xv = xVal();
+    const M = Math.max(6, Math.ceil(xv) + 2);
+    const u = (x1 - x0) / M;
+    ctx.strokeStyle = '#93A5C9'; ctx.lineWidth = 2;
+    line(ctx, x0, y, x1 + 10, y);
+    ctx.fillStyle = '#93A5C9';
+    ctx.beginPath();
+    ctx.moveTo(x1 + 16, y); ctx.lineTo(x1 + 6, y - 5); ctx.lineTo(x1 + 6, y + 5);
+    ctx.closePath(); ctx.fill();
+    const labelStep = u >= 26 ? 1 : (u >= 14 ? 2 : 5);
+    ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+    for (let v = 0; v <= M; v++){
+      ctx.strokeStyle = '#B9C6E0'; ctx.lineWidth = 1.5;
+      line(ctx, x0 + v * u, y - 5, x0 + v * u, y + 5);
+      if (v % labelStep === 0){
+        ctx.fillStyle = '#8A98B8'; ctx.font = '11px system-ui';
+        ctx.fillText(String(v), x0 + v * u, y + 9);
+      }
+    }
+    // x 的位置标记
+    const px = x0 + xv * u;
+    ctx.beginPath(); ctx.arc(px, y, 9, 0, Math.PI * 2);
+    ctx.fillStyle = '#2ECC71'; ctx.fill();
+    ctx.lineWidth = 3; ctx.strokeStyle = '#fff'; ctx.stroke();
+    ctx.fillStyle = '#157F44'; ctx.font = 'bold 13px system-ui';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
+    ctx.fillText('x = ' + xStr().split('（')[0], px, y - 14);
+    ctx.fillStyle = '#7A89A8'; ctx.font = '12px system-ui';
+    ctx.textAlign = 'left';
+    ctx.fillText('解 x 在数轴上的位置：', x0, y - 32);
+  }
+
+  // —— 各步骤的方程显示（KaTeX + 纯文本回退） ——
+  function eqTex(){
+    const { a, b, c, step } = st;
+    if (step === 0)
+      return b === 0
+        ? [a + 'x = ' + c, a + 'x = ' + c]
+        : [a + 'x + ' + b + ' = ' + c, a + 'x + ' + b + ' = ' + c];
+    if (step === 1)
+      return b === 0
+        ? [a + 'x = ' + c, a + 'x = ' + c]
+        : [a + 'x = ' + c + ' - ' + b + ' = ' + (c - b), a + 'x = ' + c + ' − ' + b + ' = ' + (c - b)];
+    const v = c - b;
+    if (v === 0) return ['x = 0', 'x = 0'];
+    if (a === 1 || v % a === 0) return ['x = ' + (v / a), 'x = ' + (v / a)];
+    const g = gcd(v, a);
+    return [
+      'x = \\frac{' + v + '}{' + a + '} = \\frac{' + (v / g) + '}{' + (a / g) + '} \\approx ' + trim2(v / a),
+      'x = ' + v + '/' + a + ' = ' + (v / g) + '/' + (a / g) + ' ≈ ' + trim2(v / a)
+    ];
+  }
+  function stepText(){
+    const { a, b, c, step } = st;
+    if (step === 0) return '原方程：左盘 ' + a + ' 个 x 方块和 ' + b + ' 个小球，右盘 ' + c + ' 个小球，天平平衡。';
+    if (step === 1) return '第 1 步 · 移项：两边同时减去 ' + b + '，天平仍然平衡。';
+    return '第 2 步 · 化系数为 1：两边同时除以 ' + a + '，求出 x。';
+  }
+
+  function refresh(){
+    const [tex, plain] = eqTex();
+    renderTex($('balEq'), tex, plain);
+    $('balStepText').textContent = stepText();
+    $('balX').textContent = 'x = ' + xStr();
+    $('balAVal').textContent = st.a; $('balBVal').textContent = st.b; $('balCVal').textContent = st.c;
+    Array.from($('balDots').children).forEach((d, i) => d.classList.toggle('on', i === st.step));
+    $('balPrev').disabled = st.step === 0;
+    $('balNext').disabled = st.step === 2;
+    draw();
+  }
+
+  function rockAnim(){
+    rock = 0;
+    animate(900, p => { rock = p; draw(); }, () => { rock = 1; draw(); });
+  }
+
+  // —— 步骤切换（带物品动画） ——
+  function gotoStep(n){
+    if (busy || n === st.step || n < 0 || n > 2) return;
+    busy = true;
+    if (st.step === 0 && n === 1 && st.b > 0){
+      // 移项动画：两边各 b 个小球飞走
+      const L = layout(), cont = panContents();
+      const lp = itemPositions(cont.blocks + cont.ballsL, L.cx - L.bh, L.panY);
+      const rp = itemPositions(cont.ballsR, L.cx + L.bh, L.panY);
+      flyList = [];
+      for (let i = 0; i < st.b; i++){
+        flyList.push(lp[cont.blocks + i]);
+        flyList.push(rp[i]);
+      }
+      animate(700, p => { flyP = p; draw(); }, () => {
+        flyList = null; st.step = 1; busy = false;
+        refresh(); rockAnim(); success();
+      });
+    }else{
+      // 通用淡入淡出过渡
+      animate(280, p => { itemsAlpha = 1 - p; draw(); }, () => {
+        st.step = n;
+        animate(280, p => { itemsAlpha = p; draw(); }, () => {
+          itemsAlpha = 1; busy = false;
+          refresh(); rockAnim(); success();
+        });
+      });
+    }
+  }
+
+  function resetToStep0(){
+    st.step = 0; flyList = null; itemsAlpha = 1; rock = 1;
+    refresh();
+  }
+
+  $('balPrev').addEventListener('click', () => gotoStep(st.step - 1));
+  $('balNext').addEventListener('click', () => gotoStep(st.step + 1));
+  $('balA').addEventListener('input', e => { st.a = +e.target.value; resetToStep0(); });
+  $('balB').addEventListener('input', e => {
+    st.b = +e.target.value;
+    if (st.c < st.b){ st.c = st.b; $('balC').value = st.c; } // 保证 c ≥ b（解非负）
+    resetToStep0();
+  });
+  $('balC').addEventListener('input', e => {
+    st.c = +e.target.value;
+    if (st.c < st.b){ st.c = st.b; e.target.value = st.c; }
+    resetToStep0();
+  });
+  $('balReset').addEventListener('click', () => {
+    st.a = 2; st.b = 3; st.c = 9;
+    $('balA').value = 2; $('balB').value = 3; $('balC').value = 9;
+    resetToStep0(); clickSound();
+  });
+  $('balRandom').addEventListener('click', () => {
+    st.a = randInt(1, 5); st.b = randInt(0, 8); st.c = randInt(st.b, 16);
+    $('balA').value = st.a; $('balB').value = st.b; $('balC').value = st.c;
+    resetToStep0(); clickSound();
+  });
+
+  function refit(){ view = fitCanvas(canvas); draw(); }
+  redrawAll.push(refit);
+  refresh();
+})();
+
+/* ============================================================
+ * 模块五：几何图形初步
+ * ============================================================ */
+
+/* ---------- 5.1 可拖动的角 ---------- */
+(function initAngle(){
+  const canvas = $('angCanvas');
+  let view = fitCanvas(canvas);
+  const st = { deg: 45 };
+  let dragging = false;
+
+  const geom = () => ({ Vx: view.W * 0.34, Vy: view.H * 0.70, R: Math.min(view.W * 0.52, view.H * 0.62) });
+
+  function classify(d){
+    if (d < 90) return ['锐角（小于 90°）', 'c-green'];
+    if (d === 90) return ['直角（等于 90°）', 'c-blue'];
+    if (d < 180) return ['钝角（大于 90°，小于 180°）', 'c-orange'];
+    return ['平角（等于 180°）', 'c-red'];
+  }
+
+  function draw(){
+    const { ctx, W, H } = view;
+    if (W < 40) return;
+    ctx.clearRect(0, 0, W, H);
+    const { Vx, Vy, R } = geom();
+    const rad = st.deg * Math.PI / 180;
+    const Ex = Vx + R * Math.cos(rad), Ey = Vy - R * Math.sin(rad);
+
+    // —— 角的两条边 ——
+    ctx.lineCap = 'round';
+    ctx.strokeStyle = '#8494B8'; ctx.lineWidth = 3;
+    line(ctx, Vx, Vy, Vx + R, Vy);              // 固定边
+    ctx.strokeStyle = '#5B8DEF';
+    line(ctx, Vx, Vy, Ex, Ey);                  // 可动边
+
+    // —— 角度弧线（直角画小方块符号） ——
+    if (st.deg === 90){
+      ctx.strokeStyle = '#FF9F43'; ctx.lineWidth = 2.5;
+      ctx.beginPath();
+      ctx.moveTo(Vx + 16, Vy); ctx.lineTo(Vx + 16, Vy - 16); ctx.lineTo(Vx, Vy - 16);
+      ctx.stroke();
+    }else{
+      ctx.strokeStyle = '#FF9F43'; ctx.lineWidth = 3;
+      ctx.beginPath(); ctx.arc(Vx, Vy, 34, -rad, 0); ctx.stroke();
+    }
+
+    // —— 角度数值 ——
+    const mid = rad / 2;
+    ctx.fillStyle = '#B95F0E'; ctx.font = 'bold 16px system-ui';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText(st.deg + '°', Vx + 58 * Math.cos(mid), Vy - 58 * Math.sin(mid));
+
+    // —— 顶点与控制点 ——
+    ctx.beginPath(); ctx.arc(Vx, Vy, 5, 0, Math.PI * 2); ctx.fillStyle = '#2B3A55'; ctx.fill();
+    ctx.beginPath(); ctx.arc(Ex, Ey, 11, 0, Math.PI * 2);
+    ctx.fillStyle = '#5B8DEF'; ctx.fill();
+    ctx.lineWidth = 3; ctx.strokeStyle = '#fff'; ctx.stroke();
+  }
+
+  function updateChip(){
+    const [txt, cls] = classify(st.deg);
+    const el = $('angClass');
+    el.className = 'chip ' + cls;
+    el.textContent = st.deg + '° · ' + txt;
+    flash(el);
+  }
+
+  onPointer(canvas, {
+    down(p){
+      const { Vx, Vy, R } = geom();
+      const rad = st.deg * Math.PI / 180;
+      if (Math.hypot(p.x - (Vx + R * Math.cos(rad)), p.y - (Vy - R * Math.sin(rad))) < 30) dragging = true;
+    },
+    move(p){
+      if (!dragging) return;
+      const { Vx, Vy } = geom();
+      let d = Math.round(Math.atan2(-(p.y - Vy), p.x - Vx) * 180 / Math.PI);
+      d = Math.max(1, Math.min(180, d));
+      if (d !== st.deg){ st.deg = d; updateChip(); draw(); beep(400 + d * 3, 0.03, 'sine', 0.05); }
+    },
+    up(){ dragging = false; }
+  });
+
+  $('angReset').addEventListener('click', () => { st.deg = 45; updateChip(); draw(); clickSound(); });
+  $('angRandom').addEventListener('click', () => { st.deg = randInt(3, 33) * 5; updateChip(); draw(); clickSound(); });
+
+  function refit(){ view = fitCanvas(canvas); draw(); }
+  redrawAll.push(refit);
+  updateChip(); draw();
+})();
+
+/* ---------- 5.2 互余与互补（两个角联动） ---------- */
+(function initCompSupp(){
+  const canvas = $('csCanvas');
+  let view = fitCanvas(canvas);
+  const st = { total: 90, deg: 35 }; // total：90 互余 / 180 互补
+  let dragging = false;
+
+  const bounds = () => (st.total === 90 ? [5, 85] : [10, 170]);
+  const geom = () => ({
+    L: { x: view.W * 0.22, y: view.H * 0.74 },
+    R: { x: view.W * 0.62, y: view.H * 0.74 },
+    r: Math.min(view.W * 0.24, view.H * 0.52)
+  });
+
+  // —— 画一个完整的角（顶点 + 两边 + 控制点） ——
+  function drawDraggable(ctx, V, r, deg){
+    const rad = deg * Math.PI / 180;
+    const Ex = V.x + r * Math.cos(rad), Ey = V.y - r * Math.sin(rad);
+    ctx.lineCap = 'round';
+    ctx.strokeStyle = '#8494B8'; ctx.lineWidth = 3;
+    line(ctx, V.x, V.y, V.x + r, V.y);
+    ctx.strokeStyle = '#5B8DEF';
+    line(ctx, V.x, V.y, Ex, Ey);
+    ctx.strokeStyle = '#5B8DEF'; ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.arc(V.x, V.y, 28, -rad, 0); ctx.stroke();
+    ctx.beginPath(); ctx.arc(V.x, V.y, 5, 0, Math.PI * 2); ctx.fillStyle = '#2B3A55'; ctx.fill();
+    ctx.beginPath(); ctx.arc(Ex, Ey, 11, 0, Math.PI * 2);
+    ctx.fillStyle = '#5B8DEF'; ctx.fill();
+    ctx.lineWidth = 3; ctx.strokeStyle = '#fff'; ctx.stroke();
+    const mid = rad / 2;
+    ctx.fillStyle = '#2F5BC4'; ctx.font = 'bold 14px system-ui';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText('α = ' + deg + '°', V.x + 50 * Math.cos(mid), V.y - 50 * Math.sin(mid));
+  }
+
+  function draw(){
+    const { ctx, W, H } = view;
+    if (W < 40) return;
+    ctx.clearRect(0, 0, W, H);
+    const { L, R, r } = geom();
+    const deg = st.deg, total = st.total;
+    const radA = deg * Math.PI / 180, radT = total * Math.PI / 180;
+
+    // —— 左边：可拖动的 α ——
+    drawDraggable(ctx, L, r, deg);
+
+    // —— 右边：α + β 拼成直角/平角 ——
+    ctx.lineCap = 'round';
+    ctx.strokeStyle = '#8494B8'; ctx.lineWidth = 3;
+    line(ctx, R.x, R.y, R.x + r, R.y);                                     // 0° 边
+    ctx.strokeStyle = '#5B8DEF'; ctx.lineWidth = 2;
+    line(ctx, R.x, R.y, R.x + r * Math.cos(radA), R.y - r * Math.sin(radA)); // α 终边
+    ctx.strokeStyle = '#8494B8'; ctx.lineWidth = 3;
+    line(ctx, R.x, R.y, R.x + r * Math.cos(radT), R.y - r * Math.sin(radT)); // 总和终边
+    // α 弧（蓝）与 β 弧（橙）
+    ctx.strokeStyle = '#5B8DEF'; ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.arc(R.x, R.y, 26, -radA, 0); ctx.stroke();
+    ctx.strokeStyle = '#FF9F43';
+    ctx.beginPath(); ctx.arc(R.x, R.y, 42, -radT, -radA); ctx.stroke();
+    if (total === 90){ // 直角符号
+      ctx.strokeStyle = '#A9B8D8'; ctx.lineWidth = 2; ctx.setLineDash([4, 3]);
+      ctx.beginPath();
+      ctx.moveTo(R.x + 15, R.y); ctx.lineTo(R.x + 15, R.y - 15); ctx.lineTo(R.x, R.y - 15);
+      ctx.stroke(); ctx.setLineDash([]);
+    }
+    const midA = radA / 2, midB = (radA + radT) / 2;
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillStyle = '#2F5BC4'; ctx.font = 'bold 13px system-ui';
+    ctx.fillText('α', R.x + 42 * Math.cos(midA), R.y - 42 * Math.sin(midA));
+    ctx.fillStyle = '#B95F0E';
+    ctx.fillText('β', R.x + 60 * Math.cos(midB), R.y - 60 * Math.sin(midB));
+    ctx.beginPath(); ctx.arc(R.x, R.y, 5, 0, Math.PI * 2); ctx.fillStyle = '#2B3A55'; ctx.fill();
+
+    // —— 图注 ——
+    ctx.fillStyle = '#7A89A8'; ctx.font = '12px system-ui';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic';
+    ctx.fillText('← 拖动 α 的控制点', L.x + r * 0.35, H - 10);
+    ctx.fillText('α + β = ' + total + '° →', R.x + r * 0.3, H - 10);
+  }
+
+  function refresh(){
+    $('csAlpha').textContent = 'α = ' + st.deg + '°';
+    $('csBeta').textContent = 'β = ' + st.total + '° − ' + st.deg + '° = ' + (st.total - st.deg) + '°';
+    $('csSum').textContent = 'α + β = ' + st.total + '° ✓';
+    draw();
+  }
+
+  onPointer(canvas, {
+    down(p){
+      const { L, r } = geom();
+      const rad = st.deg * Math.PI / 180;
+      if (Math.hypot(p.x - (L.x + r * Math.cos(rad)), p.y - (L.y - r * Math.sin(rad))) < 30) dragging = true;
+    },
+    move(p){
+      if (!dragging) return;
+      const { L } = geom();
+      let d = Math.round(Math.atan2(-(p.y - L.y), p.x - L.x) * 180 / Math.PI);
+      const [lo, hi] = bounds();
+      d = Math.max(lo, Math.min(hi, d));
+      if (d !== st.deg){ st.deg = d; refresh(); beep(400 + d * 3, 0.03, 'sine', 0.05); }
+    },
+    up(){ dragging = false; }
+  });
+
+  function setMode(total){
+    st.total = total;
+    $('csMode90').className = total === 90 ? 'btn btn-primary' : 'btn';
+    $('csMode180').className = total === 180 ? 'btn btn-primary' : 'btn';
+    const [lo, hi] = bounds();
+    st.deg = Math.max(lo, Math.min(hi, st.deg));
+    refresh(); clickSound();
+  }
+  $('csMode90').addEventListener('click', () => setMode(90));
+  $('csMode180').addEventListener('click', () => setMode(180));
+  $('csReset').addEventListener('click', () => { st.deg = st.total === 90 ? 35 : 120; refresh(); clickSound(); });
+  $('csRandom').addEventListener('click', () => {
+    const [lo, hi] = bounds();
+    st.deg = randInt(Math.ceil(lo / 5), Math.floor(hi / 5)) * 5;
+    refresh(); clickSound();
+  });
+
+  function refit(){ view = fitCanvas(canvas); draw(); }
+  redrawAll.push(refit);
+  refresh();
+})();
+
+/* ---------- 5.3 线段的中点 ---------- */
+(function initMidpoint(){
+  const canvas = $('midCanvas');
+  let view = fitCanvas(canvas);
+  const G = 32; // 网格间距（px）= 1 格
+  const st = { A: { fx: 0.24, fy: 0.62 }, B: { fx: 0.78, fy: 0.34 } }; // 相对坐标（随画布缩放）
+  let drag = null;
+
+  const pt = f => ({ x: f.fx * view.W, y: f.fy * view.H });
+  const dist = (p, q) => Math.hypot(p.x - q.x, p.y - q.y);
+
+  // —— 在线段中点处画“等长刻线” ——
+  function tickMark(ctx, P, Q){
+    const mx = (P.x + Q.x) / 2, my = (P.y + Q.y) / 2;
+    const dx = Q.x - P.x, dy = Q.y - P.y;
+    const len = Math.hypot(dx, dy) || 1;
+    const nx = -dy / len * 7, ny = dx / len * 7;
+    ctx.strokeStyle = '#FF9F43'; ctx.lineWidth = 2.5; ctx.lineCap = 'round';
+    line(ctx, mx - nx, my - ny, mx + nx, my + ny);
+  }
+
+  function draw(){
+    const { ctx, W, H } = view;
+    if (W < 40) return;
+    ctx.clearRect(0, 0, W, H);
+    // —— 网格背景 ——
+    ctx.strokeStyle = '#EDF1FA'; ctx.lineWidth = 1;
+    for (let x = G; x < W; x += G) line(ctx, x, 0, x, H);
+    for (let y = G; y < H; y += G) line(ctx, 0, y, W, y);
+
+    const A = pt(st.A), B = pt(st.B);
+    const M = { x: (A.x + B.x) / 2, y: (A.y + B.y) / 2 };
+
+    // —— 线段与等长标记 ——
+    ctx.strokeStyle = '#8494B8'; ctx.lineWidth = 3; ctx.lineCap = 'round';
+    line(ctx, A.x, A.y, B.x, B.y);
+    tickMark(ctx, A, M);
+    tickMark(ctx, M, B);
+
+    // —— 端点与中点 ——
+    const drawDot = (p, color, r) => {
+      ctx.beginPath(); ctx.arc(p.x, p.y, r, 0, Math.PI * 2);
+      ctx.fillStyle = color; ctx.fill();
+      ctx.lineWidth = 3; ctx.strokeStyle = '#fff'; ctx.stroke();
+    };
+    drawDot(A, '#5B8DEF', 11); drawDot(B, '#FF9F43', 11); drawDot(M, '#2ECC71', 9);
+    ctx.font = 'bold 13px system-ui'; ctx.textAlign = 'center';
+    ctx.fillStyle = '#2F5BC4'; ctx.textBaseline = 'bottom';
+    ctx.fillText('A', A.x, A.y - 15);
+    ctx.fillStyle = '#B95F0E';
+    ctx.fillText('B', B.x, B.y - 15);
+    ctx.fillStyle = '#157F44'; ctx.textBaseline = 'top';
+    ctx.fillText('M', M.x, M.y + 13);
+  }
+
+  function updateChips(){
+    const A = pt(st.A), B = pt(st.B);
+    const M = { x: (A.x + B.x) / 2, y: (A.y + B.y) / 2 };
+    $('midAM').textContent = 'AM = ' + (dist(A, M) / G).toFixed(1) + ' 格';
+    $('midMB').textContent = 'MB = ' + (dist(M, B) / G).toFixed(1) + ' 格';
+    $('midAB').textContent = 'AB = ' + (dist(A, B) / G).toFixed(1) + ' 格';
+    $('midOk').textContent = '✓ AM = MB';
+  }
+  function refresh(){ updateChips(); draw(); }
+
+  onPointer(canvas, {
+    down(p){
+      const A = pt(st.A), B = pt(st.B);
+      if (dist(p, A) < 24) drag = st.A;
+      else if (dist(p, B) < 24) drag = st.B;
+    },
+    move(p){
+      if (!drag) return;
+      drag.fx = Math.max(0.05, Math.min(0.95, p.x / view.W));
+      drag.fy = Math.max(0.08, Math.min(0.92, p.y / view.H));
+      refresh();
+    },
+    up(){ if (drag) clickSound(); drag = null; }
+  });
+
+  $('midReset').addEventListener('click', () => {
+    st.A = { fx: 0.24, fy: 0.62 }; st.B = { fx: 0.78, fy: 0.34 };
+    refresh(); clickSound();
+  });
+  $('midRandom').addEventListener('click', () => {
+    st.A = { fx: 0.12 + Math.random() * 0.76, fy: 0.15 + Math.random() * 0.7 };
+    st.B = { fx: 0.12 + Math.random() * 0.76, fy: 0.15 + Math.random() * 0.7 };
+    refresh(); clickSound();
+  });
+
+  function refit(){ view = fitCanvas(canvas); refresh(); }
+  redrawAll.push(refit);
+  refresh();
+})();
+
+/* ============================================================
+ * 模块六：平面直角坐标系 —— 对称点探索
+ * ============================================================ */
+(function initCoord(){
+  const canvas = $('coordCanvas');
+  let view = fitCanvas(canvas);
+  const N = 6;            // 坐标显示范围 [-6, 6]
+  const st = { x: 3, y: 2 };
+  let dragging = false;
+
+  function geom(){
+    const u = Math.floor(Math.min(view.W - 60, view.H - 60) / (2 * N));
+    return { cx: view.W / 2, cy: view.H / 2, u };
+  }
+  const PX = (g, x) => g.cx + x * g.u;
+  const PY = (g, y) => g.cy - y * g.u;
+
+  function draw(){
+    const { ctx, W, H } = view;
+    if (W < 40) return;
+    ctx.clearRect(0, 0, W, H);
+    const g = geom();
+
+    // —— 网格 ——
+    ctx.lineWidth = 1;
+    for (let i = -N; i <= N; i++){
+      ctx.strokeStyle = i === 0 ? '#C7D3EC' : '#E9EFFA';
+      line(ctx, PX(g, i), PY(g, -N), PX(g, i), PY(g, N));
+      line(ctx, PX(g, -N), PY(g, i), PX(g, N), PY(g, i));
+    }
+
+    // —— 坐标轴与箭头 ——
+    ctx.strokeStyle = '#8494B8'; ctx.lineWidth = 2;
+    line(ctx, PX(g, -N) - 12, g.cy, PX(g, N) + 18, g.cy);
+    line(ctx, g.cx, PY(g, -N) - 12, g.cx, PY(g, N) + 18);
+    ctx.fillStyle = '#8494B8';
+    ctx.beginPath(); // x 轴箭头
+    ctx.moveTo(PX(g, N) + 24, g.cy); ctx.lineTo(PX(g, N) + 12, g.cy - 5); ctx.lineTo(PX(g, N) + 12, g.cy + 5);
+    ctx.closePath(); ctx.fill();
+    ctx.beginPath(); // y 轴箭头
+    ctx.moveTo(g.cx, PY(g, N) - 18); ctx.lineTo(g.cx - 5, PY(g, N) - 6); ctx.lineTo(g.cx + 5, PY(g, N) - 6);
+    ctx.closePath(); ctx.fill();
+
+    // —— 刻度标签 ——
+    ctx.font = '10px system-ui'; ctx.fillStyle = '#93A1C0';
+    for (let i = -N; i <= N; i++){
+      if (i === 0) continue;
+      ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+      ctx.fillText(String(i), PX(g, i), g.cy + 5);
+      ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+      ctx.fillText(String(i), g.cx - 6, PY(g, i));
+    }
+    ctx.textAlign = 'right'; ctx.textBaseline = 'top';
+    ctx.fillText('O', g.cx - 5, g.cy + 5);
+    ctx.font = 'bold 13px system-ui'; ctx.fillStyle = '#5B6B8C';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
+    ctx.fillText('x', PX(g, N) + 18, g.cy - 8);
+    ctx.textAlign = 'left'; ctx.textBaseline = 'top';
+    ctx.fillText('y', g.cx + 9, PY(g, N) - 16);
+
+    // —— P 与三个对称点 ——
+    const pts = [
+      { x: st.x,  y: st.y,  color: '#5B8DEF', name: 'P'  },
+      { x: st.x,  y: -st.y, color: '#FF9F43', name: 'P₁' },
+      { x: -st.x, y: st.y,  color: '#2ECC71', name: 'P₂' },
+      { x: -st.x, y: -st.y, color: '#E74C3C', name: 'P₃' }
+    ];
+    // 虚线连接（对称关系）
+    const dash = (p1, p2, color) => {
+      ctx.setLineDash([5, 4]); ctx.strokeStyle = color; ctx.lineWidth = 1.8;
+      line(ctx, PX(g, p1.x), PY(g, p1.y), PX(g, p2.x), PY(g, p2.y));
+      ctx.setLineDash([]);
+    };
+    dash(pts[0], pts[1], '#FF9F43'); // 关于 x 轴
+    dash(pts[0], pts[2], '#2ECC71'); // 关于 y 轴
+    dash(pts[0], pts[3], '#E74C3C'); // 关于原点
+    // 点与坐标标签（P 最后画，位于最上层）
+    [pts[3], pts[2], pts[1], pts[0]].forEach(p => {
+      const px = PX(g, p.x), py = PY(g, p.y);
+      ctx.beginPath(); ctx.arc(px, py, 7.5, 0, Math.PI * 2);
+      ctx.fillStyle = p.color; ctx.fill();
+      ctx.lineWidth = 2.5; ctx.strokeStyle = '#fff'; ctx.stroke();
+      // 标签沿“远离原点”的方向偏移，减少遮挡
+      let dx = px - g.cx, dy = py - g.cy;
+      const len = Math.hypot(dx, dy);
+      if (len < 0.001){ dx = 0.7; dy = -0.7; } else { dx /= len; dy /= len; }
+      ctx.fillStyle = p.color; ctx.font = 'bold 12px system-ui';
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText(p.name + '(' + fmt(p.x) + ',' + fmt(p.y) + ')', px + dx * 36, py + dy * 26);
+    });
+  }
+
+  function updateLegend(){
+    $('coordP').textContent = 'P (' + fmt(st.x) + ', ' + fmt(st.y) + ')';
+    $('coordP1').textContent = 'P₁ (' + fmt(st.x) + ', ' + fmt(-st.y) + ') · 关于 x 轴对称';
+    $('coordP2').textContent = 'P₂ (' + fmt(-st.x) + ', ' + fmt(st.y) + ') · 关于 y 轴对称';
+    $('coordP3').textContent = 'P₃ (' + fmt(-st.x) + ', ' + fmt(-st.y) + ') · 关于原点对称';
+  }
+  function refresh(){ updateLegend(); draw(); }
+
+  // —— 点击/拖动放置 P（吸附到整数格点） ——
+  function place(p){
+    const g = geom();
+    const nx = Math.max(-(N - 1), Math.min(N - 1, Math.round((p.x - g.cx) / g.u)));
+    const ny = Math.max(-(N - 1), Math.min(N - 1, Math.round((g.cy - p.y) / g.u)));
+    if (nx !== st.x || ny !== st.y){
+      st.x = nx; st.y = ny;
+      refresh();
+      beep(480 + (nx + N) * 28 + (ny + N) * 8, 0.04, 'sine', 0.06);
+    }
+  }
+  onPointer(canvas, {
+    down(p){
+      const g = geom();
+      dragging = true;
+      if (Math.hypot(p.x - PX(g, st.x), p.y - PY(g, st.y)) >= 22) place(p); // 点空白处：P 跳过去
+    },
+    move(p){ if (dragging) place(p); },
+    up(){ dragging = false; }
+  });
+
+  $('coordReset').addEventListener('click', () => { st.x = 3; st.y = 2; refresh(); clickSound(); });
+  $('coordRandom').addEventListener('click', () => { st.x = randInt(-5, 5); st.y = randInt(-5, 5); refresh(); clickSound(); });
+
+  function refit(){ view = fitCanvas(canvas); draw(); }
+  redrawAll.push(refit);
+  refresh();
+})();
+</script>
+</body>
+</html>
