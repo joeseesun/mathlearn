@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>初一数学公式可视化互动学习</title>
+<title>初中数学公式可视化互动学习</title>
 <!-- Umami 站点统计（隐私友好，仅 math.qiaomu.ai 域名生效） -->
 <script defer src="https://umami.qiaomu.ai/script.js" data-website-id="0dcb0c05-5c4e-4f1d-aaf0-3cb35dba1d96" data-domains="math.qiaomu.ai"></script>
 <!-- KaTeX：公式渲染（CDN 引入；加载失败时自动回退为 Unicode 文本公式） -->
@@ -68,7 +68,7 @@ body{
 button{font-family:inherit;}
 ::selection{background:rgba(92,140,235,.24);}
 :focus{outline:none;}
-:is(.btn,.nav-btn,.mute-btn,.stepper button):focus-visible{box-shadow:var(--ring);}
+:is(.btn,.nav-btn,.mute-btn,.stepper button,.grade-tab):focus-visible{box-shadow:var(--ring);}
 
 /* ==================== 顶部标题栏 ==================== */
 .app-header{
@@ -95,6 +95,28 @@ button{font-family:inherit;}
   transition:border-color var(--dur) var(--ease),color var(--dur) var(--ease),transform var(--dur) var(--ease),box-shadow var(--dur) var(--ease);
 }
 .mute-btn:active{transform:scale(.97);}
+
+/* ==================== 年级分段控件（初一 / 初二 / 初三） ==================== */
+.grade-bar{position:relative;border-top:1px solid var(--line);}
+.grade-seg{max-width:1180px;margin:0 auto;padding:10px 20px;display:flex;}
+/* 白底 pill 容器 + 深蓝选中块（与导航选中态一致） */
+.seg-wrap{
+  display:inline-flex;gap:4px;padding:4px;
+  background:var(--surface);border:1.5px solid var(--line-2);
+  border-radius:var(--r-pill);box-shadow:var(--sh-xs);
+}
+.grade-tab{
+  border:none;background:transparent;color:var(--muted);cursor:pointer;
+  font-weight:800;font-size:var(--fs-md);padding:7px 26px;border-radius:var(--r-pill);
+  transition:background-color var(--dur) var(--ease),color var(--dur) var(--ease),box-shadow var(--dur) var(--ease),transform var(--dur) var(--ease);
+}
+.grade-tab:active{transform:scale(.96);}
+.grade-tab.active{background:var(--blue-deep);color:#fff;box-shadow:var(--sh-blue);}
+/* author 样式里的 display:flex 会盖过 UA 的 [hidden]，需要显式补一条 */
+.side-nav[hidden]{display:none;}
+
+/* 场景钩子：模块标题下的一句加粗短句 */
+.hook{font-weight:800;font-size:var(--fs-md);margin:-6px 0 12px;}
 
 /* ==================== 整体布局：左导航 + 右内容 ==================== */
 .app{display:flex;gap:22px;max-width:1180px;margin:20px auto;padding:0 20px;align-items:flex-start;}
@@ -297,6 +319,7 @@ button{font-family:inherit;}
 @media (hover:hover) and (pointer:fine){
   .nav-btn:hover{border-color:var(--blue-200);color:var(--blue-text);}
   .mute-btn:hover{border-color:var(--blue);color:var(--blue-text);}
+  .grade-tab:not(.active):hover{color:var(--blue-text);}
   .btn:not(:disabled):hover{border-color:var(--blue);color:var(--blue-text);}
   .btn-primary:not(:disabled):hover{background:var(--blue-dark);border-color:var(--blue-dark);color:#fff;}
   .stepper button:hover{background:var(--blue);color:#fff;}
@@ -327,11 +350,14 @@ button{font-family:inherit;}
   .app-header h1{font-size:1.2rem;}
   .app-header .subtitle{font-size:.84rem;}
   .mute-btn{font-size:.75rem;padding:6px 12px;}
+  .grade-seg{padding:8px 14px;}
   .formula-bar{font-size:.98rem;gap:8px 16px;padding:10px 14px;}
   .card{padding:16px 14px;}
 }
 @media (max-width:480px){
   .app{padding:0 10px;}
+  .grade-seg{padding:8px 10px;}
+  .grade-tab{padding:6px 18px;font-size:.86rem;}
   .module h2{font-size:1.1rem;}
   .slider-row label{width:66px;font-size:.82rem;}
   .slider-row input[type=range]::-webkit-slider-thumb{width:24px;height:24px;}
@@ -344,20 +370,29 @@ button{font-family:inherit;}
 </head>
 <body>
 
-<!-- ==================== 页面顶部：标题 + 使用说明 ==================== -->
+<!-- ==================== 页面顶部：标题 + 使用说明 + 年级切换 ==================== -->
 <header class="app-header">
   <div class="header-inner">
     <div class="header-text">
-      <h1>初一数学公式可视化互动学习</h1>
-      <p class="subtitle">点击左侧导航切换模块；拖动画布上的控制点、滑块和按钮，让抽象的公式“动”起来！</p>
+      <h1>初中数学公式可视化互动学习</h1>
+      <p class="subtitle">初一、初二、初三，先选年级再挑模块；拖动画布上的控制点、滑块和按钮，让抽象的公式“动”起来！</p>
     </div>
     <button id="muteBtn" class="mute-btn">音效：开</button>
+  </div>
+  <div class="grade-bar">
+    <div class="grade-seg">
+      <div class="seg-wrap" role="tablist" aria-label="选择年级">
+        <button class="grade-tab active" data-grade="1">初一</button>
+        <button class="grade-tab" data-grade="2">初二</button>
+        <button class="grade-tab" data-grade="3">初三</button>
+      </div>
+    </div>
   </div>
 </header>
 
 <div class="app">
-  <!-- ==================== 左侧导航栏（6 个模块，单页内切换） ==================== -->
-  <nav class="side-nav">
+  <!-- ==================== 左侧导航栏（按年级分组，单页内切换） ==================== -->
+  <nav class="side-nav" id="navG1">
     <button class="nav-btn active" data-target="module-1"><span class="nav-num">1</span>有理数运算</button>
     <button class="nav-btn" data-target="module-2"><span class="nav-num">2</span>整式运算</button>
     <button class="nav-btn" data-target="module-3"><span class="nav-num">3</span>乘法公式</button>
@@ -365,12 +400,29 @@ button{font-family:inherit;}
     <button class="nav-btn" data-target="module-5"><span class="nav-num">5</span>几何图形初步</button>
     <button class="nav-btn" data-target="module-6"><span class="nav-num">6</span>平面直角坐标系</button>
   </nav>
+  <nav class="side-nav" id="navG2" hidden>
+    <button class="nav-btn" data-target="module-g2-1"><span class="nav-num">1</span>勾股定理</button>
+    <button class="nav-btn" data-target="module-g2-2"><span class="nav-num">2</span>一次函数</button>
+    <button class="nav-btn" data-target="module-g2-3"><span class="nav-num">3</span>二次根式</button>
+    <button class="nav-btn" data-target="module-g2-4"><span class="nav-num">4</span>因式分解</button>
+    <button class="nav-btn" data-target="module-g2-5"><span class="nav-num">5</span>平行四边形</button>
+    <button class="nav-btn" data-target="module-g2-6"><span class="nav-num">6</span>数据的分析</button>
+  </nav>
+  <nav class="side-nav" id="navG3" hidden>
+    <button class="nav-btn" data-target="module-g3-1"><span class="nav-num">1</span>一元二次方程</button>
+    <button class="nav-btn" data-target="module-g3-2"><span class="nav-num">2</span>二次函数</button>
+    <button class="nav-btn" data-target="module-g3-3"><span class="nav-num">3</span>反比例函数</button>
+    <button class="nav-btn" data-target="module-g3-4"><span class="nav-num">4</span>锐角三角函数</button>
+    <button class="nav-btn" data-target="module-g3-5"><span class="nav-num">5</span>圆</button>
+    <button class="nav-btn" data-target="module-g3-6"><span class="nav-num">6</span>概率初步</button>
+  </nav>
 
   <main class="content">
 
     <!-- ==================== 模块一：有理数运算 ==================== -->
     <section class="module active" id="module-1">
       <h2><span class="sec-num">1</span>有理数运算</h2>
+      <p class="hook">🌡️ 早上零下 3℃，中午回升 8℃，现在多少度？</p>
       <div class="formula-bar">
         <div class="fb-item"><span class="tex" data-tex="|a|=\begin{cases}a, &amp; a\ge 0\\ -a, &amp; a<0\end{cases}">|a| = a（a≥0）；|a| = −a（a<0）</span></div>
         <div class="fb-item"><span class="tex" data-tex="a-b=a+(-b)">a − b = a + (−b)</span></div>
@@ -395,12 +447,13 @@ button{font-family:inherit;}
         </div>
         <div class="rule-note" id="nlRule"></div>
       </div>
-      <p class="explain"><b>小提示：</b>数轴上，一个数的绝对值就是它到原点 0 的距离。加法可以看成在数轴上“走路”：加正数向右走，加负数向左走，最后停下的位置就是运算结果。</p>
+      <p class="explain"><b>小提示：</b>绝对值就是一个数到原点 0 的距离，距离不可能是负数。加法像走路：加正数向右走，加负数向左走，停在哪儿，结果就是几。</p>
     </section>
 
     <!-- ==================== 模块二：整式运算（幂的运算） ==================== -->
     <section class="module" id="module-2">
       <h2><span class="sec-num">2</span>整式运算（幂的运算）</h2>
+      <p class="hook">📦 3 个 a 相乘，再乘 2 个 a，一共是几个 a？</p>
       <div class="formula-bar">
         <div class="fb-item"><span class="tex" data-tex="a^m \cdot a^n = a^{m+n}">aᵐ · aⁿ = aᵐ⁺ⁿ</span></div>
       </div>
@@ -431,12 +484,13 @@ button{font-family:inherit;}
         <div class="pow-expand"><span class="tex" id="powExpand"></span></div>
         <div class="readout"><span class="chip c-green" id="powVerify"></span></div>
       </div>
-      <p class="explain"><b>小提示：</b>同底数幂相乘，底数不变，指数相加。因为 a 的 m 次方表示 m 个 a 相乘，a 的 n 次方表示 n 个 a 相乘，合起来一共是 (m+n) 个 a 相乘。</p>
+      <p class="explain"><b>小提示：</b>a 的 m 次方就是 m 个 a 相乘，再乘 n 个 a，合起来一共 m + n 个。所以同底数幂相乘，底数不动，指数相加，数数方块就明白了。</p>
     </section>
 
     <!-- ==================== 模块三：乘法公式 ==================== -->
     <section class="module" id="module-3">
       <h2><span class="sec-num">3</span>乘法公式</h2>
+      <p class="hook">✂️ 剪一刀、拼一下，面积自己会把公式证出来。</p>
       <div class="formula-bar">
         <div class="fb-item"><span class="tex" data-tex="(a+b)(a-b)=a^2-b^2">(a+b)(a−b) = a² − b²</span></div>
         <div class="fb-item"><span class="tex" data-tex="(a+b)^2=a^2+2ab+b^2">(a+b)² = a² + 2ab + b²</span></div>
@@ -459,7 +513,7 @@ button{font-family:inherit;}
           <span class="chip c-green" id="dsqOk"></span>
         </div>
       </div>
-      <p class="explain"><b>小提示：</b>从边长 a 的正方形中剪去边长 b 的小正方形，剩下的 L 形可以剪开拼成一个长 (a+b)、宽 (a−b) 的长方形。面积没有变，所以 (a+b)(a−b) = a²−b²。</p>
+      <p class="explain"><b>小提示：</b>从大正方形里剪掉小正方形，剩下的 L 形剪一刀、拼一下，正好变成长 (a+b)、宽 (a−b) 的长方形。面积不会骗人，所以 (a+b)(a−b) = a²−b²。</p>
 
       <!-- 3.2 完全平方公式 -->
       <div class="card">
@@ -483,12 +537,13 @@ button{font-family:inherit;}
           <span class="chip c-gray" id="psqOk"></span>
         </div>
       </div>
-      <p class="explain"><b>小提示：</b>边长 (a+b) 的大正方形可以分成四块：a²、ab、ab、b²，加起来正好是 a²+2ab+b²。面积不会骗人，所以 (a+b)² = a²+2ab+b²。</p>
+      <p class="explain"><b>小提示：</b>边长 (a+b) 的大正方形切成四块：a²、ab、ab、b²，加起来正好是 a²+2ab+b²。两块 ab 最容易被漏掉，考试就爱在这里挖坑。</p>
     </section>
 
     <!-- ==================== 模块四：一元一次方程 ==================== -->
     <section class="module" id="module-4">
       <h2><span class="sec-num">4</span>一元一次方程</h2>
+      <p class="hook">⚖️ 从天平两边同时拿走同样的小球，天平会歪吗？</p>
       <div class="formula-bar">
         <div class="fb-item"><span class="tex" data-tex="ax+b=c\ (a\ne 0)\ \Rightarrow\ x=\dfrac{c-b}{a}">ax + b = c（a≠0）⇒ x = (c−b)/a</span></div>
       </div>
@@ -512,12 +567,13 @@ button{font-family:inherit;}
         </div>
         <div class="legend-note">■ 蓝色方块 = x（未知数）　● 橙色小球 = 1</div>
       </div>
-      <p class="explain"><b>小提示：</b>方程就像一架平衡的天平：左右两边相等。两边同时加上、减去、乘或除以同一个不为 0 的数，天平仍然平衡——利用这一点就能一步步求出 x。</p>
+      <p class="explain"><b>小提示：</b>方程就是一架天平，两边永远一样重。要求 x，就两边同时减 b、再除以 a，每一步天平都不歪，x 自己就现身了。</p>
     </section>
 
     <!-- ==================== 模块五：几何图形初步 ==================== -->
     <section class="module" id="module-5">
       <h2><span class="sec-num">5</span>几何图形初步</h2>
+      <p class="hook">📐 一副三角板里，藏着 90° 和 180° 的秘密。</p>
       <div class="formula-bar">
         <div class="fb-item"><span class="tex" data-tex="\alpha+\beta=90^\circ">α + β = 90°</span><span class="fb-text">互余</span></div>
         <div class="fb-item"><span class="tex" data-tex="\alpha+\beta=180^\circ">α + β = 180°</span><span class="fb-text">互补</span></div>
@@ -569,12 +625,13 @@ button{font-family:inherit;}
           <span class="chip c-green" id="midOk"></span>
         </div>
       </div>
-      <p class="explain"><b>小提示：</b>角的大小由两条边张开的程度决定。和为 90° 的两个角互为余角，和为 180° 的两个角互为补角；线段的中点把线段分成长度相等的两段。</p>
+      <p class="explain"><b>小提示：</b>角的大小只看两条边张开多大，和边的长短无关。凑成 90° 的两个角互余，凑成 180° 的互补；中点把线段平分成一样长的两段。</p>
     </section>
 
     <!-- ==================== 模块六：平面直角坐标系 ==================== -->
     <section class="module" id="module-6">
       <h2><span class="sec-num">6</span>平面直角坐标系</h2>
+      <p class="hook">🪞 点 P 有三面“镜子”：x 轴、y 轴和原点。</p>
       <div class="formula-bar">
         <div class="fb-item"><span class="tex" data-tex="P(x,y)">P(x, y)</span><span class="fb-text">关于 x 轴</span><span class="tex" data-tex="P_1(x,-y)">P₁(x, −y)</span></div>
         <div class="fb-item"><span class="fb-text">关于 y 轴</span><span class="tex" data-tex="P_2(-x,y)">P₂(−x, y)</span></div>
@@ -595,7 +652,395 @@ button{font-family:inherit;}
         </div>
         <div class="legend-note">虚线表示对称关系：P 与 P₁ 的连线被 x 轴垂直平分，P 与 P₂ 的连线被 y 轴垂直平分，P 与 P₃ 的连线经过原点。当 P 落在坐标轴上时，部分对称点会重合。</div>
       </div>
-      <p class="explain"><b>小提示：</b>关于 x 轴对称的点，横坐标相同、纵坐标互为相反数；关于 y 轴对称正好反过来；关于原点对称时，横、纵坐标都互为相反数。</p>
+      <p class="explain"><b>小提示：</b>关于 x 轴对称：横坐标不变，纵坐标变号；关于 y 轴对称正好反过来；关于原点对称，两个坐标一起变号。口诀：关于谁对称，谁就不变。</p>
+    </section>
+
+    <!-- ==================== 初二 1：勾股定理 ==================== -->
+    <section class="module" id="module-g2-1">
+      <h2><span class="sec-num">1</span>勾股定理</h2>
+      <p class="hook">🪜 梯子斜靠墙：脚离墙 3 米、顶端够到 4 米高处，梯子有多长？</p>
+      <div class="formula-bar">
+        <div class="fb-item"><span class="tex" data-tex="a^2+b^2=c^2">a² + b² = c²</span></div>
+        <div class="fb-item"><span class="tex" data-tex="c=\sqrt{a^2+b^2}">c = √(a² + b²)</span></div>
+      </div>
+      <div class="card">
+        <div class="card-title">三条边上各画一个正方形：两个小正方形的面积，拼得出大的吗？</div>
+        <div class="slider-row"><label>直角边 a</label><input type="range" id="pyA" min="1" max="12" step="1" value="3"><span class="val-badge" id="pyAVal">3</span></div>
+        <div class="slider-row"><label>直角边 b</label><input type="range" id="pyB" min="1" max="12" step="1" value="4"><span class="val-badge" id="pyBVal">4</span></div>
+        <canvas id="pyCanvas" class="viz" style="height:420px"></canvas>
+        <div class="controls">
+          <button class="btn btn-primary" id="pyProof">播放弦图证明</button>
+          <button class="btn btn-primary" id="pyGrid">方格验证：开</button>
+          <button class="btn" id="pyReset">重置</button>
+          <button class="btn" id="pyRandom">随机</button>
+        </div>
+        <div class="readout">
+          <span class="chip c-blue">a² = <b id="pyA2"></b></span>
+          <span class="chip c-orange">b² = <b id="pyB2"></b></span>
+          <span class="chip c-green">c² = <b id="pyC2"></b></span>
+          <span class="chip c-gray">c = <b id="pyC"></b></span>
+          <span class="chip c-green" id="pyOk"></span>
+        </div>
+        <div class="rule-note" id="pyNote"></div>
+      </div>
+      <p class="explain"><b>小提示：</b>直角三角形三条边上各画一个正方形，两个小正方形的面积加起来正好等于大正方形。所以知道了 a 和 b，c² 就有了，开个平方就是斜边 c。</p>
+    </section>
+
+    <!-- ==================== 初二 2：一次函数 y = kx + b ==================== -->
+    <section class="module" id="module-g2-2">
+      <h2><span class="sec-num">2</span>一次函数 y = kx + b</h2>
+      <p class="hook">📈 每天攒 5 块钱，存款画出来就是一条直线。</p>
+      <div class="formula-bar">
+        <div class="fb-item"><span class="tex" data-tex="y=kx+b\ (k\ne 0)">y = kx + b（k≠0）</span></div>
+        <div class="fb-item"><span class="tex" data-tex="k=\dfrac{y_2-y_1}{x_2-x_1}">k = (y₂ − y₁) / (x₂ − x₁)</span></div>
+      </div>
+      <div class="card">
+        <div class="card-title">拖动滑块改变 k 和 b，看直线怎么跟着动</div>
+        <div class="slider-row"><label>斜率 k</label><input type="range" id="lfK" min="-4" max="4" step="0.5" value="1"><span class="val-badge" id="lfKVal">1</span></div>
+        <div class="slider-row"><label>截距 b</label><input type="range" id="lfB" min="-6" max="6" step="1" value="2"><span class="val-badge" id="lfBVal">2</span></div>
+        <canvas id="lfCanvas" class="viz" style="height:420px"></canvas>
+        <div class="controls">
+          <button class="btn" id="lfReset">重置</button>
+          <button class="btn" id="lfRandom">随机</button>
+        </div>
+        <div class="readout">
+          <span class="chip c-blue">k = <b id="lfKOut"></b></span>
+          <span class="chip c-orange">b = <b id="lfBOut"></b></span>
+          <span class="chip c-gray">与 x 轴交点 <b id="lfX0"></b></span>
+          <span class="chip c-green" id="lfTrend"></span>
+        </div>
+        <div class="rule-note" id="lfNote"></div>
+      </div>
+      <p class="explain"><b>小提示：</b>b 是直线和 y 轴交点的高度，k 决定方向和陡度：k 正就向上爬，k 负就向下滑，|k| 越大越陡。b = 0 时直线过原点，就叫正比例函数。</p>
+    </section>
+
+    <!-- ==================== 初二 3：二次根式 ==================== -->
+    <section class="module" id="module-g2-3">
+      <h2><span class="sec-num">3</span>二次根式</h2>
+      <p class="hook">🧱 一块面积是 12 的正方形地砖，边长是多少？</p>
+      <div class="formula-bar">
+        <div class="fb-item"><span class="tex" data-tex="\sqrt{a}\cdot\sqrt{b}=\sqrt{ab}\ (a\ge 0,\ b\ge 0)">√a · √b = √(ab)（a≥0，b≥0）</span></div>
+        <div class="fb-item"><span class="tex" data-tex="\sqrt{a^2}=|a|">√(a²) = |a|</span></div>
+      </div>
+      <div class="card">
+        <div class="card-title">3.1 乘法验证器：√a × √b 和 √(ab) 真的一样大吗？</div>
+        <div class="slider-row"><label>数 a</label><input type="range" id="srA" min="1" max="12" step="1" value="4"><span class="val-badge" id="srAVal">4</span></div>
+        <div class="slider-row"><label>数 b</label><input type="range" id="srB" min="1" max="12" step="1" value="3"><span class="val-badge" id="srBVal">3</span></div>
+        <canvas id="srCanvas" class="viz" style="height:250px"></canvas>
+        <div class="controls">
+          <button class="btn" id="srReset1">重置</button>
+          <button class="btn" id="srRandom1">随机</button>
+        </div>
+        <div class="readout">
+          <span class="chip c-blue">√a × √b ≈ <b id="srL"></b></span>
+          <span class="chip c-orange">√(ab) ≈ <b id="srR"></b></span>
+          <span class="chip c-green" id="srOk"></span>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">3.2 化简小课堂：把藏在根号里的平方数“开”出来</div>
+        <div class="eq-display"><span class="tex" id="srEq"></span></div>
+        <div class="step-bar">
+          <button class="btn" id="srPrev">上一步</button>
+          <span class="step-dots" id="srDots"><span class="on"></span><span></span><span></span><span></span></span>
+          <button class="btn btn-primary" id="srNext">下一步</button>
+          <button class="btn" id="srReset">重置</button>
+          <button class="btn" id="srRandom">换一个数</button>
+        </div>
+        <div class="readout">
+          <span class="chip c-gray" id="srStepText"></span>
+          <span class="chip c-green" id="srVerify"></span>
+        </div>
+      </div>
+      <p class="explain"><b>小提示：</b>√a × √b = √(ab)，前提是 a、b 都不为负。化简根式的秘诀是找藏在里面的平方数：12 = 4 × 3，把 4 开出来变成 2，√12 就成了 2√3。</p>
+    </section>
+
+    <!-- ==================== 初二 4：因式分解（面积模型） ==================== -->
+    <section class="module" id="module-g2-4">
+      <h2><span class="sec-num">4</span>因式分解（面积模型）</h2>
+      <p class="hook">🧩 把 x² + 5x + 6 拼成一块长方形，边长就是答案。</p>
+      <div class="formula-bar">
+        <div class="fb-item"><span class="tex" data-tex="x^2+(p+q)x+pq=(x+p)(x+q)">x² + (p+q)x + pq = (x+p)(x+q)</span></div>
+      </div>
+      <div class="card">
+        <div class="card-title">代数砖块：四块面积拼出一个长方形（红色 = 减去）</div>
+        <div class="slider-row"><label>数 p</label><input type="range" id="ftP" min="-5" max="5" step="1" value="2"><span class="val-badge" id="ftPVal">2</span></div>
+        <div class="slider-row"><label>数 q</label><input type="range" id="ftQ" min="-5" max="5" step="1" value="3"><span class="val-badge" id="ftQVal">3</span></div>
+        <canvas id="ftCanvas" class="viz" style="height:340px"></canvas>
+        <div class="controls">
+          <button class="btn" id="ftReset">重置</button>
+          <button class="btn" id="ftRandom">随机</button>
+        </div>
+        <div class="readout">
+          <span class="chip c-blue" id="ftPoly"></span>
+          <span class="chip c-orange" id="ftPQ"></span>
+          <span class="chip c-green" id="ftFactor"></span>
+        </div>
+        <div class="rule-note" id="ftNote"></div>
+      </div>
+      <p class="explain"><b>小提示：</b>面积模型里，x² 是边长 x 的正方形，px 和 qx 是两条长方形，pq 是角落的小块。找两个数，相加等于一次项系数、相乘等于常数项，十字相乘就拆出来了。</p>
+    </section>
+
+    <!-- ==================== 初二 5：平行四边形家族 ==================== -->
+    <section class="module" id="module-g2-5">
+      <h2><span class="sec-num">5</span>平行四边形家族</h2>
+      <p class="hook">🚪 校门口的伸缩门能自由拉伸，靠的就是平行四边形。</p>
+      <div class="formula-bar">
+        <div class="fb-item"><span class="tex" data-tex="AB\parallel CD,\ AB=CD">AB ∥ CD，AB = CD</span></div>
+        <div class="fb-item"><span class="tex" data-tex="\angle A=\angle C,\ \angle B=\angle D">∠A = ∠C，∠B = ∠D</span></div>
+        <div class="fb-item"><span class="tex" data-tex="AO=OC,\ BO=OD">AO = OC，BO = OD</span></div>
+      </div>
+      <div class="card">
+        <div class="card-title">拖动顶点 D 改变形状，对角线交点 O 永远是中点</div>
+        <div class="controls">
+          <button class="btn btn-primary" id="pgPara">平行四边形</button>
+          <button class="btn" id="pgRect">矩形</button>
+          <button class="btn" id="pgRhomb">菱形</button>
+          <button class="btn" id="pgSquare">正方形</button>
+        </div>
+        <canvas id="pgCanvas" class="viz" style="height:340px"></canvas>
+        <div class="controls">
+          <button class="btn" id="pgReset">重置</button>
+          <button class="btn" id="pgRandom">随机</button>
+        </div>
+        <div class="readout">
+          <span class="chip c-blue" id="pgSide1"></span>
+          <span class="chip c-orange" id="pgSide2"></span>
+          <span class="chip c-green" id="pgAng1"></span>
+          <span class="chip c-gray" id="pgAng2"></span>
+          <span class="chip c-green" id="pgDiag1"></span>
+          <span class="chip c-gray" id="pgDiag2"></span>
+        </div>
+        <div class="rule-note" id="pgProps"></div>
+        <div class="legend-note">短刻线：AB 与 CD 一条、AD 与 BC 两条，表示对边相等；对角线上的刻线表示 O 把两条对角线都平分了。</div>
+      </div>
+      <p class="explain"><b>小提示：</b>不管怎么拉，对边始终相等、对角始终相等，对角线永远互相平分。矩形的角全是 90°，菱形的边全都相等，正方形两样都占。</p>
+    </section>
+
+    <!-- ==================== 初二 6：数据的分析 ==================== -->
+    <section class="module" id="module-g2-6">
+      <h2><span class="sec-num">6</span>数据的分析</h2>
+      <p class="hook">🧋 给 6 杯奶茶打分，平均 8 分就一定好喝吗？</p>
+      <div class="formula-bar">
+        <div class="fb-item"><span class="tex" data-tex="\bar{x}=\dfrac{1}{n}(x_1+x_2+\cdots+x_n)">x̄ = (x₁ + x₂ + … + xₙ) / n</span></div>
+        <div class="fb-item"><span class="tex" data-tex="s^2=\dfrac{1}{n}\left[(x_1-\bar{x})^2+\cdots+(x_n-\bar{x})^2\right]">s² = [(x₁ − x̄)² + … + (xₙ − x̄)²] / n</span></div>
+      </div>
+      <div class="card">
+        <div class="card-title">拖动柱子顶端改分数，蓝色虚线是平均数</div>
+        <canvas id="daCanvas" class="viz" style="height:340px"></canvas>
+        <div class="controls">
+          <button class="btn" id="daAdd">加一个数据</button>
+          <button class="btn" id="daDel">减一个数据</button>
+          <button class="btn" id="daReset">重置</button>
+          <button class="btn" id="daRandom">随机</button>
+        </div>
+        <div class="readout">
+          <span class="chip c-blue">平均数 <b id="daMean"></b></span>
+          <span class="chip c-orange">中位数 <b id="daMedian"></b></span>
+          <span class="chip c-green">众数 <b id="daMode"></b></span>
+          <span class="chip c-red">极差 <b id="daRange"></b></span>
+          <span class="chip c-gray">方差 <b id="daVar"></b></span>
+        </div>
+        <div class="rule-note" id="daNote"></div>
+        <div class="legend-note">■ 橙色柱子 = 中位数所在的位置　■ 绿色柱子 = 众数（出现次数最多）　拖动柱子时数值取整数。</div>
+      </div>
+      <p class="explain"><b>小提示：</b>平均数怕极端值，一个特别高或特别低的数就能把它拉跑。中位数是排好队站中间的那个，更稳；众数是出现次数最多的。方差越大，数据越分散。</p>
+    </section>
+
+    <!-- ==================== 初三 1：一元二次方程 ==================== -->
+    <section class="module" id="module-g3-1">
+      <h2><span class="sec-num">1</span>一元二次方程</h2>
+      <p class="hook">🎯 小球抛出去什么时候落地？算算抛物线和地面的交点。</p>
+      <div class="formula-bar">
+        <div class="fb-item"><span class="tex" data-tex="ax^2+bx+c=0\ (a\ne 0)">ax² + bx + c = 0（a≠0）</span></div>
+        <div class="fb-item"><span class="tex" data-tex="x=\dfrac{-b\pm\sqrt{b^2-4ac}}{2a}">x = (−b ± √(b²−4ac)) / 2a</span></div>
+        <div class="fb-item"><span class="tex" data-tex="\Delta=b^2-4ac">Δ = b² − 4ac</span></div>
+      </div>
+      <div class="card">
+        <div class="card-title">拖动滑块改变 a、b、c，看抛物线与 x 轴的交点（就是方程的根）</div>
+        <div class="slider-row"><label>系数 a</label><input type="range" id="qeA" min="-3" max="3" step="0.5" value="1"><span class="val-badge" id="qeAVal">1</span></div>
+        <div class="slider-row"><label>系数 b</label><input type="range" id="qeB" min="-6" max="6" step="1" value="-3"><span class="val-badge" id="qeBVal">−3</span></div>
+        <div class="slider-row"><label>常数 c</label><input type="range" id="qeC" min="-6" max="6" step="1" value="2"><span class="val-badge" id="qeCVal">2</span></div>
+        <canvas id="qeCanvas" class="viz" style="height:420px"></canvas>
+        <div class="controls">
+          <button class="btn" id="qeReset">重置</button>
+          <button class="btn" id="qeRandom">随机</button>
+        </div>
+        <div class="readout">
+          <span class="chip c-blue">Δ = <b id="qeDelta"></b></span>
+          <span class="chip c-green" id="qeState"></span>
+          <span class="chip c-orange" id="qeX1"></span>
+          <span class="chip c-orange" id="qeX2"></span>
+        </div>
+        <div class="rule-note" id="qeNote"></div>
+      </div>
+      <p class="explain"><b>小提示：</b>方程 ax² + bx + c = 0 的解，就是抛物线 y = ax² + bx + c 和 x 轴交点的横坐标。判别式 Δ 管着交点个数：Δ &gt; 0 有两个交点，Δ = 0 刚好贴着 x 轴（两个相等的根），Δ &lt; 0 整条抛物线碰不到 x 轴，就没有实数根。</p>
+    </section>
+
+    <!-- ==================== 初三 2：二次函数 y = a(x−h)² + k ==================== -->
+    <section class="module" id="module-g3-2">
+      <h2><span class="sec-num">2</span>二次函数</h2>
+      <p class="hook">🏀 篮球出手后划出的那道弧线，就是一条抛物线。</p>
+      <div class="formula-bar">
+        <div class="fb-item"><span class="tex" data-tex="y=a(x-h)^2+k\ (a\ne 0)">y = a(x−h)² + k（a≠0）</span></div>
+        <div class="fb-item"><span class="fb-text">顶点</span><span class="tex" data-tex="(h,\ k)">(h, k)</span></div>
+        <div class="fb-item"><span class="fb-text">对称轴</span><span class="tex" data-tex="x=h">x = h</span></div>
+      </div>
+      <div class="card">
+        <div class="card-title">拖动滑块，看顶点和对称轴怎么跑；灰色虚线是 y = x² 作参照</div>
+        <div class="slider-row"><label>系数 a</label><input type="range" id="qfA" min="-2" max="2" step="0.25" value="1"><span class="val-badge" id="qfAVal">1</span></div>
+        <div class="slider-row"><label>顶点横坐标 h</label><input type="range" id="qfH" min="-5" max="5" step="1" value="2"><span class="val-badge" id="qfHVal">2</span></div>
+        <div class="slider-row"><label>顶点纵坐标 k</label><input type="range" id="qfK" min="-5" max="5" step="1" value="-3"><span class="val-badge" id="qfKVal">−3</span></div>
+        <canvas id="qfCanvas" class="viz" style="height:420px"></canvas>
+        <div class="controls">
+          <button class="btn" id="qfReset">重置</button>
+          <button class="btn" id="qfRandom">随机</button>
+        </div>
+        <div class="readout">
+          <span class="chip c-orange">顶点 <b id="qfVertex"></b></span>
+          <span class="chip c-green" id="qfOpen"></span>
+          <span class="chip c-blue" id="qfExt"></span>
+        </div>
+        <div class="rule-note" id="qfNote"></div>
+      </div>
+      <p class="explain"><b>小提示：</b>y = a(x−h)² + k 是 y = x² 搬家变形来的：h 管左右平移（括号里是减 h，别搞反方向），k 管上下平移，a 管开口方向和胖瘦——a 正开口向上、有最小值 k；a 负开口向下、有最大值 k。</p>
+    </section>
+
+    <!-- ==================== 初三 3：反比例函数 ==================== -->
+    <section class="module" id="module-g3-3">
+      <h2><span class="sec-num">3</span>反比例函数</h2>
+      <p class="hook">🚗 一段 60 km 的路，车速翻倍，时间就减半。</p>
+      <div class="formula-bar">
+        <div class="fb-item"><span class="tex" data-tex="y=\dfrac{k}{x}\ (k\ne 0)">y = k/x（k≠0）</span></div>
+        <div class="fb-item"><span class="tex" data-tex="xy=k">xy = k</span></div>
+        <div class="fb-item"><span class="fb-text">矩形面积</span><span class="tex" data-tex="S=|k|">S = |k|</span></div>
+      </div>
+      <div class="card">
+        <div class="card-title">拖动橙色点 P（始终贴在双曲线上），看 x·y 变不变</div>
+        <div class="slider-row"><label>比例系数 k</label><input type="range" id="rfK" min="-12" max="12" step="1" value="4"><span class="val-badge" id="rfKVal">4</span></div>
+        <canvas id="rfCanvas" class="viz" style="height:420px"></canvas>
+        <div class="controls">
+          <button class="btn" id="rfReset">重置</button>
+          <button class="btn" id="rfRandom">随机</button>
+        </div>
+        <div class="readout">
+          <span class="chip c-blue">k = <b id="rfKOut"></b></span>
+          <span class="chip c-orange" id="rfP"></span>
+          <span class="chip c-green" id="rfXY"></span>
+          <span class="chip c-gray" id="rfArea"></span>
+        </div>
+        <div class="rule-note" id="rfNote"></div>
+      </div>
+      <p class="explain"><b>小提示：</b>y = k/x 的图像是两支双曲线，x 越大 y 越小，乘积 xy 永远是 k。从曲线上任意一点向两轴作垂线，围出的矩形面积恒等于 |k|。k 正，图像在一、三象限；k 负，在二、四象限。</p>
+    </section>
+
+    <!-- ==================== 初三 4：锐角三角函数 ==================== -->
+    <section class="module" id="module-g3-4">
+      <h2><span class="sec-num">4</span>锐角三角函数</h2>
+      <p class="hook">🛝 滑梯陡不陡，不用爬上去，量一个角就算得出来。</p>
+      <div class="formula-bar">
+        <div class="fb-item"><span class="tex" data-tex="\sin\theta">sin θ</span><span class="fb-text">对边 ÷ 斜边</span></div>
+        <div class="fb-item"><span class="tex" data-tex="\cos\theta">cos θ</span><span class="fb-text">邻边 ÷ 斜边</span></div>
+        <div class="fb-item"><span class="tex" data-tex="\tan\theta">tan θ</span><span class="fb-text">对边 ÷ 邻边</span></div>
+      </div>
+      <div class="card">
+        <div class="card-title">拖动顶点 B 或滑块改变 θ，三条边在变，比值只跟角度走</div>
+        <div class="slider-row"><label>角度 θ</label><input type="range" id="tgAng" min="5" max="85" step="1" value="30"><span class="val-badge" id="tgAngVal">30°</span></div>
+        <canvas id="tgCanvas" class="viz" style="height:380px"></canvas>
+        <div class="controls">
+          <button class="btn btn-primary" id="tgB30">30°</button>
+          <button class="btn" id="tgB45">45°</button>
+          <button class="btn" id="tgB60">60°</button>
+          <button class="btn" id="tgReset">重置</button>
+          <button class="btn" id="tgRandom">随机</button>
+        </div>
+        <div class="readout">
+          <span class="chip c-gray">θ = <b id="tgDeg"></b></span>
+          <span class="chip c-orange" id="tgSin"></span>
+          <span class="chip c-green" id="tgCos"></span>
+          <span class="chip c-blue" id="tgTan"></span>
+        </div>
+        <div class="eq-display"><span class="tex" id="tgExact"></span></div>
+        <div class="legend-note">■ 橙色 = 对边（θ 正对着的边）　■ 绿色 = 邻边　■ 蓝色 = 斜边（固定为 5）</div>
+      </div>
+      <p class="explain"><b>小提示：</b>角 θ 一定，直角三角形三条边的比值就定了，所以 sin、cos、tan 只是给这些比值起的名字。记特殊角有个窍门：30°、45°、60° 的 sin 值是 √1/2、√2/2、√3/2，cos 正好倒过来，tan = sin ÷ cos。</p>
+    </section>
+
+    <!-- ==================== 初三 5：圆 ==================== -->
+    <section class="module" id="module-g3-5">
+      <h2><span class="sec-num">5</span>圆</h2>
+      <p class="hook">🎡 站在圆周上不同位置看同一段弧，张角居然一样大。</p>
+      <div class="formula-bar">
+        <div class="fb-item"><span class="tex" data-tex="\angle APB=\dfrac{1}{2}\angle AOB">∠APB = ½∠AOB</span><span class="fb-text">圆周角定理</span></div>
+        <div class="fb-item"><span class="tex" data-tex="l=\dfrac{n\pi r}{180}">l = nπr / 180</span></div>
+        <div class="fb-item"><span class="tex" data-tex="S=\dfrac{n\pi r^2}{360}">S = nπr² / 360</span></div>
+      </div>
+
+      <!-- 5.1 圆周角定理 -->
+      <div class="card">
+        <div class="card-title">5.1 圆周角定理：拖动点 P 沿优弧滑动，∠APB 会变吗？</div>
+        <canvas id="ciCanvas" class="viz" style="height:340px"></canvas>
+        <div class="controls">
+          <button class="btn" id="ciReset">重置</button>
+          <button class="btn" id="ciRandom">随机</button>
+        </div>
+        <div class="readout">
+          <span class="chip c-blue" id="ciCentral"></span>
+          <span class="chip c-orange" id="ciInsc"></span>
+          <span class="chip c-green" id="ciOk"></span>
+          <span class="chip c-green" id="ciFixed"></span>
+        </div>
+      </div>
+
+      <!-- 5.2 弧长与扇形面积 -->
+      <div class="card">
+        <div class="card-title">5.2 弧长与扇形面积：调半径 r 和圆心角 n°，扇形就是圆的 n/360</div>
+        <div class="slider-row"><label>半径 r</label><input type="range" id="ciR" min="1" max="5" step="0.5" value="3"><span class="val-badge" id="ciRVal">3</span></div>
+        <div class="slider-row"><label>圆心角 n°</label><input type="range" id="ciN" min="30" max="330" step="5" value="120"><span class="val-badge" id="ciNVal">120°</span></div>
+        <canvas id="ciSecCanvas" class="viz" style="height:300px"></canvas>
+        <div class="controls">
+          <button class="btn" id="ciSecReset">重置</button>
+          <button class="btn" id="ciSecRandom">随机</button>
+        </div>
+        <div class="readout">
+          <span class="chip c-blue" id="ciArcL"></span>
+          <span class="chip c-orange" id="ciArcS"></span>
+          <span class="chip c-gray" id="ciFrac"></span>
+        </div>
+        <div class="rule-note" id="ciSecNote"></div>
+      </div>
+      <p class="explain"><b>小提示：</b>同一段弧，不管圆周上的 P 站哪儿，张角都一样，而且正好是圆心角的一半——所以直径所对的圆周角总是 90°。扇形就是按 n/360 的比例从整个圆里切一块：弧长、面积都按这个比例算。</p>
+    </section>
+
+    <!-- ==================== 初三 6：概率初步 ==================== -->
+    <section class="module" id="module-g3-6">
+      <h2><span class="sec-num">6</span>概率初步</h2>
+      <p class="hook">🎲 掷 1000 次骰子，每个面真的各占 1/6 吗？</p>
+      <div class="formula-bar">
+        <div class="fb-item"><span class="tex" data-tex="P(A)=\dfrac{m}{n}">P(A) = m/n</span><span class="fb-text">古典概型</span></div>
+        <div class="fb-item"><span class="tex" data-tex="P=\dfrac{1}{6}">P = 1/6</span><span class="fb-text">掷得越多，频率越靠近它</span></div>
+      </div>
+      <div class="card">
+        <div class="card-title">掷骰子模拟器：掷得越多，柱子越贴近绿色虚线（1/6）</div>
+        <canvas id="pbCanvas" class="viz" style="height:360px"></canvas>
+        <div class="controls">
+          <button class="btn btn-primary" id="pbRoll10">掷 10 次</button>
+          <button class="btn btn-primary" id="pbRoll100">掷 100 次</button>
+          <button class="btn btn-primary" id="pbRoll1000">掷 1000 次</button>
+          <button class="btn" id="pbReset">重置</button>
+        </div>
+        <div class="readout">
+          <span class="chip c-blue">总次数 <b id="pbTotal"></b></span>
+          <span class="chip c-gray" id="pbF1"></span>
+          <span class="chip c-gray" id="pbF2"></span>
+          <span class="chip c-gray" id="pbF3"></span>
+          <span class="chip c-gray" id="pbF4"></span>
+          <span class="chip c-gray" id="pbF5"></span>
+          <span class="chip c-gray" id="pbF6"></span>
+        </div>
+        <div class="rule-note" id="pbNote"></div>
+      </div>
+      <p class="explain"><b>小提示：</b>频率 = 频数 ÷ 总次数。掷几次的时候，各面频率可能差很远；掷得足够多，频率就稳定在概率附近——这叫频率的稳定性。所以估算概率有个笨办法也很可靠：大量重复试验，用频率当近似值。</p>
     </section>
 
   </main>
@@ -727,7 +1172,9 @@ window.addEventListener('resize', () => {
 });
 
 /* ============================================================
- * 顶部：静音开关 / 导航切换（支持 #hash 定位，便于截图测试）
+ * 顶部：静音开关 / 年级切换 / 模块导航
+ * hash 路由：#g1-3 表示初一第 3 个模块，#g2-1 表示初二第 1 个模块；
+ * 旧版 #module-3 形式的 hash 自动映射到初一（兼容旧链接与截图脚本）。
  * ============================================================ */
 $('muteBtn').addEventListener('click', () => {
   muted = !muted;
@@ -735,21 +1182,52 @@ $('muteBtn').addEventListener('click', () => {
   if (!muted) clickSound();
 });
 
-const navBtns = Array.from(document.querySelectorAll('.nav-btn'));
+const gradeTabs = Array.from(document.querySelectorAll('.grade-tab'));
+const gradeNavs = { 1: $('navG1'), 2: $('navG2'), 3: $('navG3') };
+const gradeHome = { 1: 'module-1', 2: 'module-g2-1', 3: 'module-g3-1' };
+const lastModule = { 1: 'module-1', 2: 'module-g2-1', 3: 'module-g3-1' }; // 每个年级独立记住当前模块
+let curGrade = 1;
+
+// —— 由模块 id 生成 hash：module-3 → #g1-3，module-g2-1 → #g2-1 ——
+function moduleHash(id){
+  const m = id.match(/^module(?:-g(\d+))?-(\d+)$/);
+  return '#g' + (m[1] || '1') + '-' + m[2];
+}
 function activateModule(id){
-  navBtns.forEach(b => b.classList.toggle('active', b.dataset.target === id));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.toggle('active', b.dataset.target === id));
   document.querySelectorAll('.module').forEach(m => m.classList.toggle('active', m.id === id));
+  lastModule[curGrade] = id;
   // 模块从隐藏变为显示后，画布需要重新适配尺寸
   requestAnimationFrame(() => redrawAll.forEach(f => f()));
 }
-navBtns.forEach(b => b.addEventListener('click', () => {
+function switchGrade(g, pushHash){
+  curGrade = g;
+  gradeTabs.forEach(t => t.classList.toggle('active', +t.dataset.grade === g));
+  Object.keys(gradeNavs).forEach(k => { gradeNavs[k].hidden = +k !== g; });
+  const id = lastModule[g] || gradeHome[g];
+  activateModule(id);
+  if (pushHash) history.replaceState(null, '', moduleHash(id));
+}
+gradeTabs.forEach(t => t.addEventListener('click', () => { clickSound(); switchGrade(+t.dataset.grade, true); }));
+document.querySelectorAll('.nav-btn').forEach(b => b.addEventListener('click', () => {
   clickSound();
-  history.replaceState(null, '', '#' + b.dataset.target);
+  history.replaceState(null, '', moduleHash(b.dataset.target));
   activateModule(b.dataset.target);
 }));
 function activateFromHash(){
-  if (location.hash && document.getElementById(location.hash.slice(1))){
-    activateModule(location.hash.slice(1));
+  const h = location.hash.slice(1);
+  if (!h) return;
+  let g = 1, id = null;
+  const m = h.match(/^g([123])-(\d+)$/);
+  if (m){
+    g = +m[1];
+    id = g === 1 ? 'module-' + m[2] : 'module-g' + m[1] + '-' + m[2];
+  }else if (/^module-\d+$/.test(h)){ // 旧版 hash：映射到初一
+    g = 1; id = h;
+  }
+  if (id && document.getElementById(id)){
+    switchGrade(g, false);
+    activateModule(id);
   }
 }
 activateFromHash();
@@ -1954,6 +2432,1852 @@ document.querySelectorAll('.tex[data-tex]').forEach(el => renderTex(el, el.datas
 
   $('coordReset').addEventListener('click', () => { st.x = 3; st.y = 2; refresh(); clickSound(); });
   $('coordRandom').addEventListener('click', () => { st.x = randInt(-5, 5); st.y = randInt(-5, 5); refresh(); clickSound(); });
+
+  function refit(){ view = fitCanvas(canvas); draw(); }
+  redrawAll.push(refit);
+  refresh();
+})();
+
+/* ============================================================
+ * 初二模块
+ * ============================================================ */
+
+// —— 初二模块共用：更新 chip 文本（内容变化时才播放闪烁动画） ——
+function setChip2(el, txt, noFlash){
+  if (!el || el.textContent === txt) return;
+  el.textContent = txt;
+  if (!noFlash) flash(el.closest('.chip') || el);
+}
+// —— 最多两位小数的简洁数字显示（负号用数学符号 −） ——
+const fmt2 = x => {
+  const r = Math.round(x * 100) / 100;
+  return r < 0 ? '−' + Math.abs(r) : String(r);
+};
+
+/* ---------- 初二 1：勾股定理（三边正方形 + 方格验证 + 弦图证明） ---------- */
+(function initPythagoras(){
+  const canvas = $('pyCanvas');
+  let view = fitCanvas(canvas);
+  const st = { a: 3, b: 4, grid: true };
+  let proof = null;    // 弦图动画进度 {t}，null 表示主视图
+  let proving = false;
+
+  // —— 主视图布局：直角顶点 P0，Q 在右（直角边 a），R 在上（直角边 b） ——
+  function geom(){
+    const { W, H } = view;
+    const s = Math.min((W - 56) / (st.a + 2 * st.b), (H - 56) / (2 * st.a + st.b));
+    return {
+      s,
+      ox: (W - (st.a + 2 * st.b) * s) / 2 + st.b * s,
+      oy: (H - (2 * st.a + st.b) * s) / 2 + (st.a + st.b) * s
+    };
+  }
+
+  function draw(){
+    const { ctx, W, H } = view;
+    if (W < 40) return;
+    ctx.clearRect(0, 0, W, H);
+    if (proof !== null) return drawProof(ctx, W, H);
+    const a = st.a, b = st.b, c2 = a * a + b * b, { s, ox, oy } = geom();
+    const Q = { x: ox + a * s, y: oy }, R = { x: ox, y: oy - b * s };
+    const n = { x: b * s, y: -a * s }; // 斜边正方形的外法向量（长度 = c·s）
+
+    // —— 三个正方形：a² 蓝（下）、b² 橙（左）、c² 绿（斜边上） ——
+    ctx.fillStyle = 'rgba(91,141,239,.88)';
+    ctx.fillRect(ox, oy, a * s, a * s);
+    ctx.lineWidth = 2; ctx.strokeStyle = '#3F6FD1';
+    ctx.strokeRect(ox, oy, a * s, a * s);
+    ctx.fillStyle = 'rgba(255,159,67,.92)';
+    ctx.fillRect(ox - b * s, oy - b * s, b * s, b * s);
+    ctx.strokeStyle = '#E08A2D';
+    ctx.strokeRect(ox - b * s, oy - b * s, b * s, b * s);
+    ctx.beginPath();
+    ctx.moveTo(Q.x, Q.y); ctx.lineTo(R.x, R.y);
+    ctx.lineTo(R.x + n.x, R.y + n.y); ctx.lineTo(Q.x + n.x, Q.y + n.y);
+    ctx.closePath();
+    ctx.fillStyle = 'rgba(46,204,113,.88)'; ctx.fill();
+    ctx.lineWidth = 2; ctx.strokeStyle = '#1E9E54'; ctx.stroke();
+
+    // —— 方格验证：每个正方形里画单位小方格，可以数格子 ——
+    if (st.grid && s >= 8){
+      ctx.lineWidth = 1; ctx.strokeStyle = 'rgba(255,255,255,.65)';
+      for (let i = 1; i < a; i++){
+        line(ctx, ox + i * s, oy, ox + i * s, oy + a * s);
+        line(ctx, ox, oy + i * s, ox + a * s, oy + i * s);
+      }
+      for (let i = 1; i < b; i++){
+        line(ctx, ox - b * s + i * s, oy - b * s, ox - b * s + i * s, oy);
+        line(ctx, ox - b * s, oy - b * s + i * s, ox, oy - b * s + i * s);
+      }
+      // 斜边上的正方形：沿斜边方向和法线方向画格线（裁剪在正方形内）
+      const c = Math.sqrt(c2);
+      const ex = (R.x - Q.x) / (c * s), ey = (R.y - Q.y) / (c * s);
+      ctx.save();
+      ctx.beginPath();
+      ctx.moveTo(Q.x, Q.y); ctx.lineTo(R.x, R.y);
+      ctx.lineTo(R.x + n.x, R.y + n.y); ctx.lineTo(Q.x + n.x, Q.y + n.y);
+      ctx.closePath(); ctx.clip();
+      for (let k = 1; k < Math.ceil(c); k++){
+        line(ctx, Q.x + ex * k * s, Q.y + ey * k * s, Q.x + ex * k * s + n.x, Q.y + ey * k * s + n.y);
+        line(ctx, Q.x + n.x * k / c, Q.y + n.y * k / c, R.x + n.x * k / c, R.y + n.y * k / c);
+      }
+      ctx.restore();
+    }
+
+    // —— 直角三角形本体 + 直角符号 ——
+    ctx.beginPath();
+    ctx.moveTo(ox, oy); ctx.lineTo(Q.x, Q.y); ctx.lineTo(R.x, R.y);
+    ctx.closePath();
+    ctx.fillStyle = '#F2F0EA'; ctx.fill();
+    ctx.lineWidth = 2.5; ctx.strokeStyle = '#8494B8'; ctx.stroke();
+    ctx.lineWidth = 2; ctx.strokeStyle = '#A9B8D8';
+    ctx.beginPath();
+    ctx.moveTo(ox + 11, oy); ctx.lineTo(ox + 11, oy - 11); ctx.lineTo(ox, oy - 11);
+    ctx.stroke();
+
+    // —— 面积标签（正方形够大时写在内部） ——
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillStyle = '#fff'; ctx.font = 'bold 14px system-ui';
+    if (a * s > 46) ctx.fillText('a² = ' + a * a, ox + a * s / 2, oy + a * s / 2);
+    if (b * s > 46) ctx.fillText('b² = ' + b * b, ox - b * s / 2, oy - b * s / 2);
+    if (Math.sqrt(c2) * s > 52)
+      ctx.fillText('c² = ' + c2, (Q.x + R.x + n.x) / 2, (Q.y + R.y + n.y) / 2);
+
+    // —— 三条边的边长标签 ——
+    ctx.fillStyle = '#5B6B8C'; ctx.font = 'bold 13px system-ui';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+    ctx.fillText('a = ' + a, ox + a * s / 2, oy + a * s + 8);
+    ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+    ctx.fillText('b = ' + b, ox - b * s - 8, oy - b * s / 2);
+    ctx.textAlign = 'left';
+    ctx.fillText('c', (Q.x + R.x) / 2 + n.x + 8, (Q.y + R.y) / 2 + n.y);
+  }
+
+  // —— 弦图证明：大正方形 (a+b)² 里 4 个全等三角形滑一滑，c² 变 a²+b² ——
+  function drawProof(ctx, W, H){
+    const a = st.a, b = st.b, t = easeInOut(proof.t);
+    const s = Math.min((W - 90) / (a + b), (H - 120) / (a + b));
+    const ox = (W - (a + b) * s) / 2, oy = (H - (a + b) * s) / 2 + 8;
+
+    ctx.lineWidth = 2.5; ctx.strokeStyle = '#8494B8';
+    ctx.strokeRect(ox, oy, (a + b) * s, (a + b) * s);
+
+    // 每个三角形：直角在原点，边 a 沿 +x、边 b 沿 +y，再整体旋转 90° 的倍数
+    // from：围出中间倾斜的 c²；to：围出 a² 和 b²（旋转不变，只平移滑动）
+    const rots = [0, Math.PI / 2, Math.PI, Math.PI * 3 / 2];
+    const from = [{x:0,y:0},{x:a+b,y:0},{x:a+b,y:a+b},{x:0,y:a+b}];
+    const to   = [{x:0,y:a},{x:a+b,y:0},{x:a,y:a+b},{x:a,y:a}];
+    const fills = ['rgba(91,141,239,.55)','rgba(255,159,67,.55)','rgba(91,141,239,.45)','rgba(255,159,67,.45)'];
+    const lines = ['#3F6FD1','#E08A2D','#3F6FD1','#E08A2D'];
+    for (let i = 0; i < 4; i++){
+      ctx.save();
+      ctx.translate(ox + lerp(from[i].x, to[i].x, t) * s, oy + lerp(from[i].y, to[i].y, t) * s);
+      ctx.rotate(rots[i]);
+      ctx.beginPath();
+      ctx.moveTo(0, 0); ctx.lineTo(a * s, 0); ctx.lineTo(0, b * s);
+      ctx.closePath();
+      ctx.fillStyle = fills[i]; ctx.fill();
+      ctx.lineWidth = 2; ctx.strokeStyle = lines[i]; ctx.stroke();
+      ctx.restore();
+    }
+
+    // 起点高亮倾斜的 c²，终点高亮 a² 与 b²
+    if (t < 0.98){
+      ctx.save();
+      ctx.globalAlpha = 1 - t;
+      ctx.beginPath();
+      ctx.moveTo(ox + a * s, oy); ctx.lineTo(ox + (a + b) * s, oy + a * s);
+      ctx.lineTo(ox + b * s, oy + (a + b) * s); ctx.lineTo(ox, oy + b * s);
+      ctx.closePath();
+      ctx.fillStyle = 'rgba(46,204,113,.28)'; ctx.fill();
+      ctx.lineWidth = 2.5; ctx.strokeStyle = '#1E9E54'; ctx.stroke();
+      ctx.fillStyle = '#157F44'; ctx.font = 'bold 16px system-ui';
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText('c² = ' + (a * a + b * b), ox + (a + b) * s / 2, oy + (a + b) * s / 2);
+      ctx.restore();
+    }
+    if (t > 0.02){
+      ctx.save();
+      ctx.globalAlpha = t;
+      ctx.fillStyle = 'rgba(46,204,113,.28)';
+      ctx.fillRect(ox, oy, a * s, a * s);
+      ctx.fillRect(ox + a * s, oy + a * s, b * s, b * s);
+      ctx.lineWidth = 2.5; ctx.strokeStyle = '#1E9E54';
+      ctx.strokeRect(ox, oy, a * s, a * s);
+      ctx.strokeRect(ox + a * s, oy + a * s, b * s, b * s);
+      ctx.fillStyle = '#157F44'; ctx.font = 'bold 15px system-ui';
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText('a² = ' + a * a, ox + a * s / 2, oy + a * s / 2);
+      if (b * s > 30) ctx.fillText('b² = ' + b * b, ox + a * s + b * s / 2, oy + a * s + b * s / 2);
+      ctx.restore();
+    }
+
+    ctx.fillStyle = '#7A89A8'; ctx.font = '12px system-ui';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
+    ctx.fillText('大正方形边长 = a + b = ' + (a + b), ox + (a + b) * s / 2, oy - 6);
+    ctx.textBaseline = 'top';
+    ctx.fillText('面积不变：4 个三角形 + c² = 4 个三角形 + a² + b²', ox + (a + b) * s / 2, oy + (a + b) * s + 8);
+  }
+
+  function updateReadouts(){
+    const a = st.a, b = st.b, c2 = a * a + b * b, c = Math.sqrt(c2);
+    const cInt = Number.isInteger(c);
+    setChip2($('pyA2'), String(a * a));
+    setChip2($('pyB2'), String(b * b));
+    setChip2($('pyC2'), String(c2));
+    setChip2($('pyC'), cInt ? String(c) : '√' + c2 + ' ≈ ' + c.toFixed(3));
+    setChip2($('pyOk'), '✓ ' + a * a + ' + ' + b * b + ' = ' + c2);
+    $('pyAVal').textContent = a; $('pyBVal').textContent = b;
+    $('pyGrid').textContent = '方格验证：' + (st.grid ? '开' : '关');
+    $('pyGrid').className = st.grid ? 'btn btn-primary' : 'btn';
+    if (!proving){
+      $('pyNote').textContent = cInt
+        ? 'a = ' + a + '，b = ' + b + '：' + a * a + ' + ' + b * b + ' = ' + c2 + '，c 正好是整数 ' + c + '，这就是一组勾股数（' + a + '，' + b + '，' + c + '）。打开方格验证数一数，面积真的相等。'
+        : 'a = ' + a + '，b = ' + b + '：' + a * a + ' + ' + b * b + ' = ' + c2 + '，c = √' + c2 + ' ≈ ' + c.toFixed(3) + '。想看到整数斜边？试试 a = 3、b = 4。';
+    }
+  }
+  function refresh(){ updateReadouts(); draw(); }
+
+  $('pyA').addEventListener('input', e => { st.a = +e.target.value; refresh(); });
+  $('pyB').addEventListener('input', e => { st.b = +e.target.value; refresh(); });
+  $('pyGrid').addEventListener('click', () => { st.grid = !st.grid; refresh(); clickSound(); });
+  $('pyReset').addEventListener('click', () => {
+    st.a = 3; st.b = 4; st.grid = true;
+    $('pyA').value = 3; $('pyB').value = 4; refresh(); clickSound();
+  });
+  $('pyRandom').addEventListener('click', () => {
+    st.a = randInt(1, 12); st.b = randInt(1, 12);
+    $('pyA').value = st.a; $('pyB').value = st.b; refresh(); clickSound();
+  });
+  $('pyProof').addEventListener('click', () => {
+    if (proving) return;
+    proving = true; $('pyProof').disabled = true;
+    $('pyNote').textContent = '弦图证明：4 个全等的直角三角形在大正方形里滑一滑，空出来的部分从 c² 变成 a² + b²。总面积没变，所以 c² = a² + b²。';
+    animate(1400, p => { proof = { t: p }; draw(); }, () => {
+      success();
+      setTimeout(() => {
+        animate(900, p => { proof = { t: 1 - p }; draw(); }, () => {
+          proof = null; proving = false; $('pyProof').disabled = false;
+          refresh();
+        });
+      }, 1700);
+    });
+  });
+
+  function refit(){ view = fitCanvas(canvas); draw(); }
+  redrawAll.push(refit);
+  refresh();
+})();
+
+/* ---------- 初二 2：一次函数 y = kx + b ---------- */
+(function initLinearFunc(){
+  const canvas = $('lfCanvas');
+  let view = fitCanvas(canvas);
+  const N = 8; // 坐标范围 [-8, 8]
+  const st = { k: 1, b: 2 };
+
+  function geom(){
+    const u = Math.floor(Math.min(view.W - 60, view.H - 60) / (2 * N));
+    return { cx: view.W / 2, cy: view.H / 2, u };
+  }
+  const PX = (g, x) => g.cx + x * g.u;
+  const PY = (g, y) => g.cy - y * g.u;
+
+  function draw(){
+    const { ctx, W, H } = view;
+    if (W < 40) return;
+    ctx.clearRect(0, 0, W, H);
+    const g = geom();
+    const k = st.k, b = st.b;
+
+    // —— 网格 / 坐标轴 / 刻度（与初一坐标系模块同一画风） ——
+    ctx.lineWidth = 1;
+    for (let i = -N; i <= N; i++){
+      ctx.strokeStyle = i === 0 ? '#C7D3EC' : '#E9EFFA';
+      line(ctx, PX(g, i), PY(g, -N), PX(g, i), PY(g, N));
+      line(ctx, PX(g, -N), PY(g, i), PX(g, N), PY(g, i));
+    }
+    ctx.strokeStyle = '#8494B8'; ctx.lineWidth = 2;
+    line(ctx, PX(g, -N) - 12, g.cy, PX(g, N) + 18, g.cy);
+    line(ctx, g.cx, PY(g, -N) - 12, g.cx, PY(g, N) + 18);
+    ctx.fillStyle = '#8494B8';
+    ctx.beginPath();
+    ctx.moveTo(PX(g, N) + 24, g.cy); ctx.lineTo(PX(g, N) + 12, g.cy - 5); ctx.lineTo(PX(g, N) + 12, g.cy + 5);
+    ctx.closePath(); ctx.fill();
+    ctx.beginPath();
+    ctx.moveTo(g.cx, PY(g, N) - 18); ctx.lineTo(g.cx - 5, PY(g, N) - 6); ctx.lineTo(g.cx + 5, PY(g, N) - 6);
+    ctx.closePath(); ctx.fill();
+    ctx.font = '10px system-ui'; ctx.fillStyle = '#93A1C0';
+    for (let i = -N; i <= N; i++){
+      if (i === 0 || i % 2 !== 0) continue; // 只标偶数刻度，避免太密
+      ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+      ctx.fillText(String(i), PX(g, i), g.cy + 5);
+      ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+      ctx.fillText(String(i), g.cx - 6, PY(g, i));
+    }
+    ctx.textAlign = 'right'; ctx.textBaseline = 'top';
+    ctx.fillText('O', g.cx - 5, g.cy + 5);
+    ctx.font = 'bold 13px system-ui'; ctx.fillStyle = '#5B6B8C';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
+    ctx.fillText('x', PX(g, N) + 18, g.cy - 8);
+    ctx.textAlign = 'left'; ctx.textBaseline = 'top';
+    ctx.fillText('y', g.cx + 9, PY(g, N) - 16);
+
+    // —— 直线与网格边界的交点（取两个，画出线段） ——
+    const cand = [];
+    const addP = (x, y) => {
+      if (x < -N - 1e-9 || x > N + 1e-9 || y < -N - 1e-9 || y > N + 1e-9) return;
+      if (!cand.some(p => Math.abs(p.x - x) < 1e-6 && Math.abs(p.y - y) < 1e-6)) cand.push({ x, y });
+    };
+    addP(-N, k * -N + b); addP(N, k * N + b);
+    if (k !== 0){ addP((-N - b) / k, -N); addP((N - b) / k, N); }
+    if (cand.length >= 2){
+      ctx.strokeStyle = '#5B8DEF'; ctx.lineWidth = 3.5; ctx.lineCap = 'round';
+      line(ctx, PX(g, cand[0].x), PY(g, cand[0].y), PX(g, cand[1].x), PY(g, cand[1].y));
+    }
+
+    // —— 斜率三角形：从 (0,b) 出发“走 1 升 k” ——
+    if (k !== 0 && Math.abs(b) <= N - 1 && Math.abs(b + k) <= N - 1){
+      const P0 = { x: PX(g, 0), y: PY(g, b) }, P1 = { x: PX(g, 1), y: PY(g, b) }, P2 = { x: PX(g, 1), y: PY(g, b + k) };
+      ctx.setLineDash([5, 4]); ctx.strokeStyle = '#FF9F43'; ctx.lineWidth = 2;
+      line(ctx, P0.x, P0.y, P1.x, P1.y);
+      line(ctx, P1.x, P1.y, P2.x, P2.y);
+      ctx.setLineDash([]);
+      const dir = k > 0 ? 1 : -1;
+      ctx.strokeStyle = '#E08A2D'; ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.moveTo(P1.x - 8, P1.y); ctx.lineTo(P1.x - 8, P1.y - dir * 8); ctx.lineTo(P1.x, P1.y - dir * 8);
+      ctx.stroke();
+      ctx.fillStyle = '#B95F0E'; ctx.font = 'bold 12px system-ui';
+      ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+      // “走 1”放在三角形的异侧，避免和截距点挤在一起
+      ctx.fillText('走 1', (P0.x + P1.x) / 2, k > 0 ? P1.y + 6 : P1.y - 20);
+      ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+      ctx.fillText((k > 0 ? '升 ' : '降 ') + Math.abs(k), P1.x + 6, (P1.y + P2.y) / 2);
+    }
+
+    // —— y 轴截距点（橙色，标签放 y 轴左侧，避开斜率三角形）与 x 轴交点（灰色） ——
+    const iy = PY(g, b);
+    ctx.beginPath(); ctx.arc(g.cx, iy, 8, 0, Math.PI * 2);
+    ctx.fillStyle = '#FF9F43'; ctx.fill();
+    ctx.lineWidth = 3; ctx.strokeStyle = '#fff'; ctx.stroke();
+    ctx.fillStyle = '#B95F0E'; ctx.font = 'bold 12px system-ui';
+    ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+    ctx.fillText('(0, ' + fmt(b) + ')', g.cx - 12, iy);
+    if (k !== 0){
+      const x0 = -b / k;
+      if (Math.abs(x0) <= N){
+        ctx.beginPath(); ctx.arc(PX(g, x0), g.cy, 6.5, 0, Math.PI * 2);
+        ctx.fillStyle = '#8A98B8'; ctx.fill();
+        ctx.lineWidth = 2.5; ctx.strokeStyle = '#fff'; ctx.stroke();
+        ctx.fillStyle = '#5F6B85'; ctx.font = 'bold 12px system-ui';
+        ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+        ctx.fillText('(' + fmt2(x0) + ', 0)', PX(g, x0), g.cy + 14);
+      }
+    }
+  }
+
+  function refresh(){
+    const k = st.k, b = st.b;
+    $('lfKVal').textContent = fmt(k); $('lfBVal').textContent = fmt(b);
+    setChip2($('lfKOut'), fmt(k));
+    setChip2($('lfBOut'), fmt(b));
+    if (k === 0) setChip2($('lfX0'), b === 0 ? '与 x 轴重合' : '不存在（与 x 轴平行）');
+    else setChip2($('lfX0'), '(' + fmt2(-b / k) + ', 0)');
+    const trend = $('lfTrend');
+    if (k > 0){ trend.className = 'chip c-green'; setChip2(trend, 'k > 0，从左往右上升'); }
+    else if (k < 0){ trend.className = 'chip c-red'; setChip2(trend, 'k < 0，从左往右下降'); }
+    else { trend.className = 'chip c-gray'; setChip2(trend, 'k = 0，一条水平线'); }
+    $('lfNote').textContent = b === 0
+      ? 'b = 0，直线经过原点——这就是正比例函数 y = kx，y 与 x 的比值永远是 k。'
+      : 'b = ' + fmt(b) + ' 是直线与 y 轴交点的高度；k = ' + fmt(k) + ' 表示 x 每走 1 格，y 就' + (k > 0 ? '升 ' : k < 0 ? '降 ' : '不变 ') + Math.abs(k) + ' 格。';
+    draw();
+  }
+
+  $('lfK').addEventListener('input', e => { st.k = +e.target.value; refresh(); });
+  $('lfB').addEventListener('input', e => { st.b = +e.target.value; refresh(); });
+  $('lfReset').addEventListener('click', () => {
+    st.k = 1; st.b = 2; $('lfK').value = 1; $('lfB').value = 2; refresh(); clickSound();
+  });
+  $('lfRandom').addEventListener('click', () => {
+    st.k = randInt(-8, 8) / 2; st.b = randInt(-6, 6);
+    $('lfK').value = st.k; $('lfB').value = st.b; refresh(); clickSound();
+  });
+
+  function refit(){ view = fitCanvas(canvas); draw(); }
+  redrawAll.push(refit);
+  refresh();
+})();
+
+/* ---------- 初二 3：二次根式 ---------- */
+(function initSqrt(){
+  const canvas = $('srCanvas');
+  let view = fitCanvas(canvas);
+  const st = { a: 4, b: 3 };
+
+  // —— 3.1 验证器：边长 √a、√b 的正方形 → 面积 √a × √b 的长方形 ——
+  function draw(){
+    const { ctx, W, H } = view;
+    if (W < 40) return;
+    ctx.clearRect(0, 0, W, H);
+    const a = st.a, b = st.b;
+    const S = Math.min(50, (W / 3 - 52) / 3.5, (H - 92) / 3.5);
+    if (S < 8) return;
+    const baseY = H - 46;
+    const sa = Math.sqrt(a) * S, sb = Math.sqrt(b) * S;
+    // 运算符
+    ctx.fillStyle = '#8A98B8'; ctx.font = 'bold 22px system-ui';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText('×', W * 0.285, baseY - 30);
+    ctx.fillText('=', W * 0.565, baseY - 30);
+    const items = [
+      { cx: W * 0.17, w: sa, h: sa, fill: 'rgba(91,141,239,.32)', line: '#3F6FD1', inside: '面积 ' + a, cap: '边长 √' + a + ' ≈ ' + Math.sqrt(a).toFixed(2) },
+      { cx: W * 0.40, w: sb, h: sb, fill: 'rgba(255,159,67,.35)', line: '#E08A2D', inside: '面积 ' + b, cap: '边长 √' + b + ' ≈ ' + Math.sqrt(b).toFixed(2) },
+      { cx: W * 0.73, w: sa, h: sb, fill: 'rgba(46,204,113,.32)', line: '#1E9E54', inside: '= √' + (a * b), cap: '面积 = √' + a + ' × √' + b }
+    ];
+    items.forEach(it => {
+      const x = it.cx - it.w / 2, y = baseY - it.h;
+      ctx.fillStyle = it.fill;
+      ctx.fillRect(x, y, it.w, it.h);
+      ctx.lineWidth = 2; ctx.strokeStyle = it.line;
+      ctx.strokeRect(x, y, it.w, it.h);
+      if (it.w > 44 && it.h > 24){
+        ctx.fillStyle = '#5B6B8C'; ctx.font = 'bold 13px system-ui';
+        ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.fillText(it.inside, it.cx, y + it.h / 2);
+      }
+      ctx.fillStyle = '#7A89A8'; ctx.font = '12px system-ui';
+      ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+      ctx.fillText(it.cap, it.cx, baseY + 10);
+    });
+  }
+
+  function refresh1(){
+    const l = Math.sqrt(st.a) * Math.sqrt(st.b), r = Math.sqrt(st.a * st.b);
+    setChip2($('srL'), l.toFixed(3));
+    setChip2($('srR'), r.toFixed(3));
+    setChip2($('srOk'), '✓ 相等');
+    $('srAVal').textContent = st.a; $('srBVal').textContent = st.b;
+    draw();
+  }
+
+  $('srA').addEventListener('input', e => { st.a = +e.target.value; refresh1(); });
+  $('srB').addEventListener('input', e => { st.b = +e.target.value; refresh1(); });
+  $('srReset1').addEventListener('click', () => {
+    st.a = 4; st.b = 3; $('srA').value = 4; $('srB').value = 3; refresh1(); clickSound();
+  });
+  $('srRandom1').addEventListener('click', () => {
+    st.a = randInt(1, 12); st.b = randInt(1, 12);
+    $('srA').value = st.a; $('srB').value = st.b; refresh1(); clickSound();
+  });
+
+  // —— 3.2 化简小课堂：分步演示 √n 的化简 ——
+  const sq = { n: 12, step: 0 };
+  // 把 n 拆成 s × m，其中 s 是最大的平方因数
+  function squareFactor(n){
+    for (let k = Math.floor(Math.sqrt(n)); k >= 2; k--){
+      if (n % (k * k) === 0) return { s: k * k, k, m: n / (k * k) };
+    }
+    return { s: 1, k: 1, m: n };
+  }
+  const SQ_POOL = [8, 12, 18, 20, 24, 27, 28, 32, 40, 44, 45, 48, 50, 52, 54, 56, 60, 63, 68, 72, 75, 76, 80, 84, 88, 90, 92, 96, 98, 99];
+
+  function refresh2(){
+    const f = squareFactor(sq.n);
+    const steps = [
+      ['\\sqrt{' + sq.n + '}', '√' + sq.n],
+      ['\\sqrt{' + sq.n + '}=\\sqrt{' + f.s + ' \\times ' + f.m + '}', '√' + sq.n + ' = √(' + f.s + ' × ' + f.m + ')'],
+      ['=\\sqrt{' + f.s + '}\\times\\sqrt{' + f.m + '}', '= √' + f.s + ' × √' + f.m],
+      ['=' + f.k + '\\sqrt{' + f.m + '}', '= ' + f.k + '√' + f.m]
+    ];
+    const [tex, plain] = steps[sq.step];
+    renderTex($('srEq'), tex, plain);
+    flash($('srEq').closest('.eq-display'));
+    const texts = [
+      '原式：√' + sq.n + '，里面藏着平方数吗？',
+      '第 1 步 · 拆：' + sq.n + ' = ' + f.s + ' × ' + f.m + '，' + f.s + ' 是最大的平方因数。',
+      '第 2 步 · 用乘法法则 √(ab) = √a × √b 拆开。',
+      '第 3 步 · √' + f.s + ' = ' + f.k + '，化简完成。'
+    ];
+    $('srStepText').textContent = texts[sq.step];
+    setChip2($('srVerify'), sq.step === 3
+      ? f.k + '√' + f.m + ' ≈ ' + (f.k * Math.sqrt(f.m)).toFixed(3) + '，√' + sq.n + ' ≈ ' + Math.sqrt(sq.n).toFixed(3) + ' ✓'
+      : '目标：把 √' + sq.n + ' 化到最简');
+    Array.from($('srDots').children).forEach((d, i) => d.classList.toggle('on', i === sq.step));
+    $('srPrev').disabled = sq.step === 0;
+    $('srNext').disabled = sq.step === 3;
+  }
+  function goto2(n){
+    if (n < 0 || n > 3 || n === sq.step) return;
+    sq.step = n; refresh2();
+    if (n === 3) success(); else clickSound();
+  }
+  $('srPrev').addEventListener('click', () => goto2(sq.step - 1));
+  $('srNext').addEventListener('click', () => goto2(sq.step + 1));
+  $('srReset').addEventListener('click', () => { sq.n = 12; sq.step = 0; refresh2(); clickSound(); });
+  $('srRandom').addEventListener('click', () => {
+    let n = sq.n;
+    while (n === sq.n) n = SQ_POOL[randInt(0, SQ_POOL.length - 1)];
+    sq.n = n; sq.step = 0; refresh2(); clickSound();
+  });
+
+  function refit(){ view = fitCanvas(canvas); draw(); }
+  redrawAll.push(refit);
+  refresh1(); refresh2();
+})();
+
+/* ---------- 初二 4：因式分解（代数砖块 / 十字相乘） ---------- */
+(function initFactorTiles(){
+  const canvas = $('ftCanvas');
+  let view = fitCanvas(canvas);
+  const st = { p: 2, q: 3 };
+
+  // —— (x + p) 的文本形式 ——
+  function fmtBin(v){
+    return v === 0 ? 'x' : v > 0 ? '(x + ' + v + ')' : '(x − ' + Math.abs(v) + ')';
+  }
+  // —— x² + sx + pr 的文本形式（自动省略为 0 的项） ——
+  function fmtPoly(s, pr){
+    let t = 'x²';
+    if (s !== 0) t += (s > 0 ? ' + ' : ' − ') + (Math.abs(s) === 1 ? '' : Math.abs(s)) + 'x';
+    if (pr !== 0) t += (pr > 0 ? ' + ' : ' − ') + Math.abs(pr);
+    return t;
+  }
+
+  function draw(){
+    const { ctx, W, H } = view;
+    if (W < 40) return;
+    ctx.clearRect(0, 0, W, H);
+    const p = st.p, q = st.q;
+    const X = Math.min(116, W * 0.30);          // x 的边长（px）
+    const u = Math.min(24, (W - X - 150) / 5);  // p/q 每 1 的宽度
+    if (u < 8) return;
+    const pw = Math.abs(p) * u, qh = Math.abs(q) * u;
+    const ox = Math.max(56, (W - X - (p > 0 ? pw : 0)) / 2);
+    const oy = 30;
+
+    // —— x² 蓝块 ——
+    ctx.fillStyle = 'rgba(91,141,239,.88)';
+    ctx.fillRect(ox, oy, X, X);
+    ctx.lineWidth = 2; ctx.strokeStyle = '#3F6FD1';
+    ctx.strokeRect(ox, oy, X, X);
+    ctx.fillStyle = '#fff'; ctx.font = 'bold 15px system-ui';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText('x²', ox + X / 2, oy + X / 2);
+    // —— px 竖条（p 为负时红色，叠在 x² 上表示减去） ——
+    if (p !== 0){
+      const px = p > 0 ? ox + X : ox + X - pw;
+      ctx.fillStyle = p > 0 ? 'rgba(255,159,67,.92)' : 'rgba(231,76,60,.6)';
+      ctx.fillRect(px, oy, pw, X);
+      ctx.lineWidth = 2; ctx.strokeStyle = p > 0 ? '#E08A2D' : '#C0392B';
+      ctx.strokeRect(px, oy, pw, X);
+      if (pw > 26){
+        ctx.fillStyle = '#fff'; ctx.font = 'bold 13px system-ui';
+        ctx.fillText(fmt(p) + 'x', px + pw / 2, oy + X / 2);
+      }
+    }
+    // —— qx 横条 ——
+    if (q !== 0){
+      const qy = q > 0 ? oy + X : oy + X - qh;
+      ctx.fillStyle = q > 0 ? 'rgba(255,179,102,.85)' : 'rgba(231,76,60,.6)';
+      ctx.fillRect(ox, qy, X, qh);
+      ctx.lineWidth = 2; ctx.strokeStyle = q > 0 ? '#E08A2D' : '#C0392B';
+      ctx.strokeRect(ox, qy, X, qh);
+      if (qh > 22){
+        ctx.fillStyle = '#fff'; ctx.font = 'bold 13px system-ui';
+        ctx.fillText(fmt(q) + 'x', ox + X / 2, qy + qh / 2);
+      }
+    }
+    // —— pq 角块（负负得正：p、q 同号为绿，异号为红） ——
+    if (p !== 0 && q !== 0){
+      const hx = p > 0 ? ox + X : ox + X - pw;
+      const hy = q > 0 ? oy + X : oy + X - qh;
+      const pos = p * q > 0;
+      ctx.fillStyle = pos ? 'rgba(46,204,113,.88)' : 'rgba(231,76,60,.6)';
+      ctx.fillRect(hx, hy, pw, qh);
+      ctx.lineWidth = 2; ctx.strokeStyle = pos ? '#1E9E54' : '#C0392B';
+      ctx.strokeRect(hx, hy, pw, qh);
+      if (pw > 24 && qh > 20){
+        ctx.fillStyle = '#fff'; ctx.font = 'bold 13px system-ui';
+        ctx.fillText(fmt(p * q), hx + pw / 2, hy + qh / 2);
+      }
+    }
+    // 有负砖时：虚线框出真正剩下的长方形 (x+p) × (x+q)
+    const effW = X - (p < 0 ? pw : 0), effH = X - (q < 0 ? qh : 0);
+    if (p < 0 || q < 0){
+      ctx.setLineDash([6, 5]); ctx.lineWidth = 2; ctx.strokeStyle = '#5B6B8C';
+      ctx.strokeRect(ox, oy, effW, effH);
+      ctx.setLineDash([]);
+    }
+
+    // —— 尺寸标注：底边 (x+p)、左边 (x+q) ——
+    const totH = X + (q > 0 ? qh : 0); // 视觉总高（负砖叠在内部，不外扩）
+    ctx.fillStyle = '#7A89A8'; ctx.font = '12px system-ui';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+    ctx.fillText('x', ox + X / 2, oy + totH + 8);
+    if (p > 0) ctx.fillText(fmt(p), ox + X + pw / 2, oy + totH + 8);
+    ctx.fillStyle = '#2B3A55'; ctx.font = 'bold 13px system-ui';
+    ctx.fillText(fmtBin(p), ox + effW / 2, oy + totH + 26);
+    const left = (cx2, cy2, txt, bold) => {
+      ctx.save();
+      ctx.translate(cx2, cy2); ctx.rotate(-Math.PI / 2);
+      ctx.fillStyle = bold ? '#2B3A55' : '#7A89A8';
+      ctx.font = (bold ? 'bold 13px' : '12px') + ' system-ui';
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText(txt, 0, 0);
+      ctx.restore();
+    };
+    left(ox - 32, oy + X / 2, 'x', false);
+    if (q > 0) left(ox - 32, oy + X + qh / 2, fmt(q), false);
+    left(ox - 12, oy + effH / 2, fmtBin(q), true);
+  }
+
+  function refresh(){
+    const p = st.p, q = st.q, s = p + q, pr = p * q;
+    const fac = p === 0 && q === 0 ? 'x · x' : fmtBin(p) + fmtBin(q);
+    $('ftPVal').textContent = fmt(p); $('ftQVal').textContent = fmt(q);
+    setChip2($('ftPoly'), '展开：' + fac + ' = ' + fmtPoly(s, pr));
+    setChip2($('ftPQ'), 'p + q = ' + fmt(s) + '，pq = ' + fmt(pr));
+    setChip2($('ftFactor'), '分解：' + fmtPoly(s, pr) + ' = ' + fac);
+    $('ftNote').textContent =
+      '十字相乘：找两个数，相加得 ' + fmt(s) + '、相乘得 ' + fmt(pr) + '，就是 ' + fmt(p) + ' 和 ' + fmt(q) + '。' +
+      (p < 0 || q < 0
+        ? '红色砖块表示减去：虚线框里剩下的才是真正的大长方形' + (p < 0 && q < 0 ? '，角落两块负数重叠又变回正的。' : '。')
+        : '四块面积加起来，正好是展开式的四项。');
+    draw();
+  }
+
+  $('ftP').addEventListener('input', e => { st.p = +e.target.value; refresh(); });
+  $('ftQ').addEventListener('input', e => { st.q = +e.target.value; refresh(); });
+  $('ftReset').addEventListener('click', () => {
+    st.p = 2; st.q = 3; $('ftP').value = 2; $('ftQ').value = 3; refresh(); clickSound();
+  });
+  $('ftRandom').addEventListener('click', () => {
+    st.p = randInt(-5, 5); st.q = randInt(-5, 5);
+    $('ftP').value = st.p; $('ftQ').value = st.q; refresh(); clickSound();
+  });
+
+  function refit(){ view = fitCanvas(canvas); draw(); }
+  redrawAll.push(refit);
+  refresh();
+})();
+
+/* ---------- 初二 5：平行四边形家族 ---------- */
+(function initParallelogram(){
+  const canvas = $('pgCanvas');
+  let view = fitCanvas(canvas);
+  const G = 34; // 1 格 = 34px（长度读数单位）
+  const st = { D: { fx: 0.34, fy: 0.26 }, mode: 'para' };
+  let drag = false, morphing = false;
+
+  // 底边 AB 的宽度受画布高度约束，保证 morph 成正方形时顶点 D 不贴顶边
+  const base = () => {
+    const w = Math.min(view.W * 0.32, view.H * 0.84 - 34);
+    return { A: { x: view.W * 0.14, y: view.H * 0.84 }, B: { x: view.W * 0.14 + w, y: view.H * 0.84 } };
+  };
+  const dPt = () => ({ x: st.D.fx * view.W, y: st.D.fy * view.H });
+  function verts(){
+    const { A, B } = base(), D = dPt();
+    return { A, B, C: { x: B.x + D.x - A.x, y: B.y + D.y - A.y }, D };
+  }
+  const dist = (p, q) => Math.hypot(p.x - q.x, p.y - q.y);
+  function angleA(){
+    const { A, D } = verts();
+    return Math.atan2(-(D.y - A.y), D.x - A.x) * 180 / Math.PI;
+  }
+  const dir = (P, Q) => Math.atan2(Q.y - P.y, Q.x - P.x);
+
+  // —— 等长刻线：count 条平行短刻线画在线段中点 ——
+  function tickMark(ctx, P, Q, count, color){
+    const mx = (P.x + Q.x) / 2, my = (P.y + Q.y) / 2;
+    const dx = Q.x - P.x, dy = Q.y - P.y;
+    const len = Math.hypot(dx, dy) || 1;
+    const nx = -dy / len, ny = dx / len;
+    const ux = dx / len, uy = dy / len;
+    ctx.strokeStyle = color; ctx.lineWidth = 2.2; ctx.lineCap = 'round';
+    for (let i = 0; i < count; i++){
+      const off = (i - (count - 1) / 2) * 6;
+      line(ctx, mx + ux * off - nx * 7, my + uy * off - ny * 7, mx + ux * off + nx * 7, my + uy * off + ny * 7);
+    }
+  }
+  // —— 角弧（自动取劣弧，即内角） ——
+  function angArc(ctx, P, Q1, Q2, color){
+    const a1 = dir(P, Q1), a2 = dir(P, Q2);
+    let d = (a2 - a1) % (Math.PI * 2);
+    if (d < 0) d += Math.PI * 2;
+    ctx.strokeStyle = color; ctx.lineWidth = 2.5;
+    ctx.beginPath(); ctx.arc(P.x, P.y, 22, a1, a2, d > Math.PI); ctx.stroke();
+  }
+  // —— 直角符号 ——
+  function rightMark(ctx, P, Q1, Q2){
+    const a1 = dir(P, Q1), a2 = dir(P, Q2);
+    const u1 = { x: Math.cos(a1), y: Math.sin(a1) }, u2 = { x: Math.cos(a2), y: Math.sin(a2) };
+    ctx.strokeStyle = '#93A5C9'; ctx.lineWidth = 1.8;
+    ctx.beginPath();
+    ctx.moveTo(P.x + u1.x * 13, P.y + u1.y * 13);
+    ctx.lineTo(P.x + u1.x * 13 + u2.x * 13, P.y + u1.y * 13 + u2.y * 13);
+    ctx.lineTo(P.x + u2.x * 13, P.y + u2.y * 13);
+    ctx.stroke();
+  }
+
+  function draw(){
+    const { ctx, W, H } = view;
+    if (W < 40) return;
+    ctx.clearRect(0, 0, W, H);
+    const { A, B, C, D } = verts();
+    const O = { x: (A.x + C.x) / 2, y: (A.y + C.y) / 2 };
+    const deg = angleA();
+
+    // —— 对角线（虚线） ——
+    ctx.setLineDash([6, 5]); ctx.strokeStyle = '#93A5C9'; ctx.lineWidth = 1.8;
+    line(ctx, A.x, A.y, C.x, C.y);
+    line(ctx, B.x, B.y, D.x, D.y);
+    ctx.setLineDash([]);
+
+    // —— 四条边 ——
+    ctx.strokeStyle = '#8494B8'; ctx.lineWidth = 3; ctx.lineCap = 'round';
+    line(ctx, A.x, A.y, B.x, B.y);
+    line(ctx, B.x, B.y, C.x, C.y);
+    line(ctx, C.x, C.y, D.x, D.y);
+    line(ctx, D.x, D.y, A.x, A.y);
+    // 对边等长刻线：AB/CD 一条，AD/BC 两条；对角线互相平分刻线（蓝）
+    tickMark(ctx, A, B, 1, '#FF9F43'); tickMark(ctx, C, D, 1, '#FF9F43');
+    tickMark(ctx, A, D, 2, '#2ECC71'); tickMark(ctx, B, C, 2, '#2ECC71');
+    tickMark(ctx, A, O, 1, '#5B8DEF'); tickMark(ctx, O, C, 1, '#5B8DEF');
+    tickMark(ctx, B, O, 2, '#5B8DEF'); tickMark(ctx, O, D, 2, '#5B8DEF');
+
+    // —— 对角弧：A、C 橙色；B、D 蓝色 ——
+    if (Math.abs(deg - 90) < 1){
+      rightMark(ctx, A, B, D); rightMark(ctx, B, A, C);
+      rightMark(ctx, C, D, B); rightMark(ctx, D, C, A);
+    }else{
+      angArc(ctx, A, B, D, '#FF9F43'); angArc(ctx, C, D, B, '#FF9F43');
+      angArc(ctx, B, A, C, '#93A5C9'); angArc(ctx, D, C, A, '#93A5C9');
+    }
+    // ∠A 读数
+    const half = -deg / 2 * Math.PI / 180;
+    ctx.fillStyle = '#B95F0E'; ctx.font = 'bold 12px system-ui';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText(Math.round(deg) + '°', A.x + 38 * Math.cos(half), A.y + 38 * Math.sin(half));
+
+    // —— 顶点（D 可拖动）与对角线交点 O ——
+    const dot = (p, color, r) => {
+      ctx.beginPath(); ctx.arc(p.x, p.y, r, 0, Math.PI * 2);
+      ctx.fillStyle = color; ctx.fill();
+      ctx.lineWidth = 3; ctx.strokeStyle = '#fff'; ctx.stroke();
+    };
+    dot(A, '#2B3A55', 5); dot(B, '#2B3A55', 5); dot(C, '#2B3A55', 5);
+    dot(O, '#2ECC71', 8);
+    dot(D, '#5B8DEF', 11);
+    ctx.font = 'bold 13px system-ui';
+    ctx.fillStyle = '#2B3A55'; ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+    ctx.fillText('A', A.x - 4, A.y + 12);
+    ctx.fillText('B', B.x + 4, B.y + 12);
+    ctx.textBaseline = 'bottom';
+    ctx.fillText('C', C.x + 4, C.y - 12);
+    ctx.fillStyle = '#2F5BC4';
+    ctx.fillText('D', D.x, D.y - 15);
+    ctx.fillStyle = '#157F44';
+    ctx.fillText('O', O.x + 13, O.y - 9);
+
+    // —— 边长读数与操作提示 ——
+    ctx.fillStyle = '#7A89A8'; ctx.font = '12px system-ui';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+    ctx.fillText('AB = ' + (dist(A, B) / G).toFixed(1), (A.x + B.x) / 2, A.y + 26);
+    const mAD = { x: (A.x + D.x) / 2, y: (A.y + D.y) / 2 };
+    const adLen = dist(A, D) || 1;
+    const nx = -(D.y - A.y) / adLen, ny = (D.x - A.x) / adLen;
+    const sgn = ((B.x - mAD.x) * nx + (B.y - mAD.y) * ny) > 0 ? -1 : 1; // 标注放在远离 B 的一侧
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText('AD = ' + (adLen / G).toFixed(1), mAD.x + nx * sgn * 30, mAD.y + ny * sgn * 30);
+    ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+    ctx.fillText('← 拖动顶点 D', 14, H - 10);
+  }
+
+  function refresh(noFlash){
+    const { A, B, C, D } = verts();
+    const O = { x: (A.x + C.x) / 2, y: (A.y + C.y) / 2 };
+    const deg = Math.round(angleA());
+    setChip2($('pgSide1'), 'AB = CD = ' + (dist(A, B) / G).toFixed(1) + ' 格', noFlash);
+    setChip2($('pgSide2'), 'AD = BC = ' + (dist(A, D) / G).toFixed(1) + ' 格', noFlash);
+    setChip2($('pgAng1'), '∠A = ∠C = ' + deg + '°', noFlash);
+    setChip2($('pgAng2'), '∠B = ∠D = ' + (180 - deg) + '°', noFlash);
+    setChip2($('pgDiag1'), 'AO = OC = ' + (dist(A, O) / G).toFixed(1) + ' 格', noFlash);
+    setChip2($('pgDiag2'), 'BO = OD = ' + (dist(B, O) / G).toFixed(1) + ' 格', noFlash);
+    draw();
+  }
+
+  // —— 家族成员与各自特性 ——
+  const SHAPES = {
+    para:   { btn: 'pgPara',   name: '平行四边形', props: '对边平行且相等，对角相等，对角线互相平分。拖动顶点 D，这些性质始终不变。' },
+    rect:   { btn: 'pgRect',   name: '矩形',       props: '四个角都是 90°；对角线不但互相平分，而且一样长（AC = BD）。' },
+    rhomb:  { btn: 'pgRhomb',  name: '菱形',       props: '四条边全都相等；对角线互相垂直平分。' },
+    square: { btn: 'pgSquare', name: '正方形',     props: '四边相等、四角都是 90°，对角线相等且垂直平分。它既是矩形，也是菱形。' }
+  };
+  function setMode(m){
+    st.mode = m;
+    Object.keys(SHAPES).forEach(k => { $(SHAPES[k].btn).className = k === m ? 'btn btn-primary' : 'btn'; });
+    $('pgProps').innerHTML = '<b>' + SHAPES[m].name + '的特性：</b>' + SHAPES[m].props;
+  }
+  // —— 顶点 D 的 morph 动画目标位置 ——
+  function shapeTarget(m){
+    const { A, B } = base();
+    const w = dist(A, B);
+    if (m === 'rect') return { x: A.x, y: A.y - 2.4 * G };
+    if (m === 'square') return { x: A.x, y: A.y - w };
+    if (m === 'rhomb'){
+      // 保持当前倾斜角；若刚从矩形/正方形过来（接近 90°），给一个好看的默认角
+      const cur = angleA();
+      const deg = Math.abs(cur - 90) < 5 ? 65 : Math.max(45, Math.min(120, cur));
+      const rad = deg * Math.PI / 180;
+      return { x: A.x + w * Math.cos(rad), y: A.y - w * Math.sin(rad) };
+    }
+    return { x: view.W * 0.34, y: view.H * 0.26 }; // 普通平行四边形
+  }
+  function morphTo(target){
+    if (morphing) return;
+    morphing = true;
+    const from = dPt();
+    animate(600, p => {
+      const t = easeInOut(p);
+      st.D.fx = lerp(from.x, target.x, t) / view.W;
+      st.D.fy = lerp(from.y, target.y, t) / view.H;
+      refresh(true); // 动画过程中不闪 chips
+    }, () => { morphing = false; refresh(); success(); });
+  }
+  Object.keys(SHAPES).forEach(k => {
+    $(SHAPES[k].btn).addEventListener('click', () => { setMode(k); morphTo(shapeTarget(k)); clickSound(); });
+  });
+
+  // —— 拖动顶点 D（保持平行四边形约束：C = B + D − A 自动跟随） ——
+  onPointer(canvas, {
+    down(p){
+      const D = dPt();
+      if (Math.hypot(p.x - D.x, p.y - D.y) < 26) drag = true;
+    },
+    move(p){
+      if (!drag || morphing) return;
+      st.D.fx = Math.max(0.06, Math.min(0.62, p.x / view.W));
+      st.D.fy = Math.max(0.06, Math.min(0.7, p.y / view.H));
+      if (st.mode !== 'para') setMode('para'); // 手动拖动后回到自由状态
+      refresh();
+    },
+    up(){ if (drag) clickSound(); drag = false; }
+  });
+
+  $('pgReset').addEventListener('click', () => {
+    setMode('para'); morphTo({ x: view.W * 0.34, y: view.H * 0.26 }); clickSound();
+  });
+  $('pgRandom').addEventListener('click', () => {
+    const { A } = base();
+    const rad = randInt(40, 120) * Math.PI / 180;
+    const len = randInt(2, 4) * G;
+    setMode('para');
+    morphTo({ x: A.x + len * Math.cos(rad), y: A.y - len * Math.sin(rad) });
+    clickSound();
+  });
+
+  function refit(){ view = fitCanvas(canvas); refresh(true); }
+  redrawAll.push(refit);
+  setMode('para'); refresh();
+})();
+
+/* ---------- 初二 6：数据的分析 ---------- */
+(function initDataAnalysis(){
+  const canvas = $('daCanvas');
+  let view = fitCanvas(canvas);
+  const DEFAULT = [7, 8, 6, 8, 9, 8];
+  const st = { data: DEFAULT.slice() };
+  const VMAX = 10;
+  let dragIdx = -1;
+
+  function stats(){
+    const d = st.data, n = d.length;
+    const sorted = d.slice().sort((x, y) => x - y);
+    const mean = d.reduce((s, v) => s + v, 0) / n;
+    const lo = sorted[Math.floor((n - 1) / 2)], hi = sorted[Math.ceil((n - 1) / 2)];
+    const cnt = {};
+    d.forEach(v => { cnt[v] = (cnt[v] || 0) + 1; });
+    const maxCnt = Math.max.apply(null, Object.keys(cnt).map(k => cnt[k]));
+    const modes = maxCnt > 1 ? Object.keys(cnt).filter(k => cnt[k] === maxCnt).map(Number) : [];
+    const variance = d.reduce((s, v) => s + (v - mean) * (v - mean), 0) / n;
+    return { n, sorted, mean, lo, hi, median: (lo + hi) / 2, modes, range: sorted[n - 1] - sorted[0], variance };
+  }
+
+  function geom(){
+    const { W, H } = view;
+    return { x0: 44, x1: W - 18, y0: H - 38, y1: 26 };
+  }
+  function barRect(g, i){
+    const colW = (g.x1 - g.x0) / st.data.length;
+    const bw = Math.min(56, colW - 12);
+    return { x: g.x0 + colW * i + (colW - bw) / 2, w: bw, uh: (g.y0 - g.y1) / VMAX };
+  }
+
+  function draw(){
+    const { ctx, W, H } = view;
+    if (W < 40) return;
+    ctx.clearRect(0, 0, W, H);
+    const g = geom(), s = stats();
+    const colW = (g.x1 - g.x0) / s.n;
+
+    // —— 横向网格线与 y 轴刻度 ——
+    ctx.font = '11px system-ui'; ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+    for (let v = 0; v <= VMAX; v += 2){
+      const y = g.y0 - (g.y0 - g.y1) / VMAX * v;
+      ctx.strokeStyle = v === 0 ? '#C7D3EC' : '#EDF1FA';
+      ctx.lineWidth = 1;
+      line(ctx, g.x0, y, g.x1, y);
+      ctx.fillStyle = '#93A1C0';
+      ctx.fillText(String(v), g.x0 - 8, y);
+    }
+
+    // —— 平均数虚线（标签徽章在柱子画完后再画，避免被高柱子挡住） ——
+    const my = g.y0 - (g.y0 - g.y1) / VMAX * s.mean;
+    ctx.setLineDash([7, 5]); ctx.strokeStyle = '#3E63C8'; ctx.lineWidth = 2;
+    line(ctx, g.x0, my, g.x1, my);
+    ctx.setLineDash([]);
+
+    // —— 柱子：中位数橙色、众数绿色、其余蓝色 ——
+    st.data.forEach((v, i) => {
+      const r = barRect(g, i);
+      const h = (g.y0 - g.y1) / VMAX * v;
+      const isMed = v === s.lo || v === s.hi;
+      const isMode = s.modes.indexOf(v) >= 0;
+      ctx.fillStyle = isMed ? 'rgba(255,159,67,.92)' : isMode ? 'rgba(46,204,113,.88)' : 'rgba(91,141,239,.88)';
+      ctx.fillRect(r.x, g.y0 - h, r.w, h);
+      ctx.lineWidth = 2;
+      ctx.strokeStyle = isMed ? '#E08A2D' : isMode ? '#1E9E54' : '#3F6FD1';
+      ctx.strokeRect(r.x, g.y0 - h, r.w, h);
+      ctx.fillStyle = '#5B6B8C'; ctx.font = 'bold 13px system-ui';
+      ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
+      ctx.fillText(String(v), r.x + r.w / 2, g.y0 - h - 5);
+      if (colW > 34){ // 太窄时省略底部编号
+        ctx.fillStyle = '#93A1C0'; ctx.font = '11px system-ui';
+        ctx.textBaseline = 'top';
+        ctx.fillText('第' + (i + 1) + '杯', r.x + r.w / 2, g.y0 + 8);
+      }
+    });
+
+    // —— 平均数标签：白底徽章，最后画保证不被遮挡；虚线靠顶时改放虚线下方 ——
+    const mLabel = '平均数 ≈ ' + fmt2(s.mean);
+    ctx.font = 'bold 12px system-ui';
+    const mw = ctx.measureText(mLabel).width;
+    const mAbove = my - 22 > g.y1;
+    const mly = mAbove ? my - 8 : my + 8;
+    ctx.fillStyle = 'rgba(255,255,255,.92)';
+    ctx.beginPath();
+    ctx.roundRect(g.x0 + 4, mly - 10, mw + 14, 20, 10);
+    ctx.fill();
+    ctx.fillStyle = '#3E63C8';
+    ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+    ctx.fillText(mLabel, g.x0 + 11, mly + 1);
+  }
+
+  function refresh(){
+    const s = stats();
+    setChip2($('daMean'), fmt2(s.mean));
+    setChip2($('daMedian'), String(s.median));
+    setChip2($('daMode'), s.modes.length ? s.modes.join('、') : '无');
+    setChip2($('daRange'), String(s.range));
+    setChip2($('daVar'), s.variance.toFixed(2));
+    $('daNote').textContent = '最高 ' + s.sorted[s.n - 1] + ' 分，最低 ' + s.sorted[0] + ' 分，相差 ' + s.range + ' 分。' +
+      (s.range >= 5 ? '分数这么散，平均数容易被带偏，看中位数更稳。' : '分数比较集中，平均数很有代表性。');
+    $('daAdd').disabled = s.n >= 10;
+    $('daDel').disabled = s.n <= 3;
+    draw();
+  }
+
+  // —— 拖动柱子改数值（整数吸附） ——
+  function colAt(p){
+    const g = geom();
+    if (p.x < g.x0 || p.x > g.x1 || p.y > g.y0 + 14) return -1;
+    const i = Math.floor((p.x - g.x0) / ((g.x1 - g.x0) / st.data.length));
+    return Math.max(0, Math.min(st.data.length - 1, i));
+  }
+  function setVal(i, p){
+    const g = geom();
+    const v = Math.max(0, Math.min(VMAX, Math.round((g.y0 - p.y) / (g.y0 - g.y1) * VMAX)));
+    if (v !== st.data[i]){
+      st.data[i] = v;
+      refresh();
+      beep(420 + v * 44, 0.03, 'sine', 0.05);
+    }
+  }
+  onPointer(canvas, {
+    down(p){ const i = colAt(p); if (i >= 0){ dragIdx = i; setVal(i, p); } },
+    move(p){ if (dragIdx >= 0) setVal(dragIdx, p); },
+    up(){ dragIdx = -1; }
+  });
+
+  $('daAdd').addEventListener('click', () => { if (st.data.length < 10){ st.data.push(randInt(3, 10)); refresh(); clickSound(); } });
+  $('daDel').addEventListener('click', () => { if (st.data.length > 3){ st.data.pop(); refresh(); clickSound(); } });
+  $('daReset').addEventListener('click', () => { st.data = DEFAULT.slice(); refresh(); clickSound(); });
+  $('daRandom').addEventListener('click', () => {
+    const n = randInt(5, 8);
+    st.data = [];
+    for (let i = 0; i < n; i++) st.data.push(randInt(2, 10));
+    refresh(); clickSound();
+  });
+
+  function refit(){ view = fitCanvas(canvas); draw(); }
+  redrawAll.push(refit);
+  refresh();
+})();
+
+/* ============================================================
+ * 初三模块
+ * ============================================================ */
+
+// —— 初三函数图像共用：平面直角坐标系（网格 + 轴 + 刻度），数学范围 [-N, N] ——
+function axesGeom(view, N){
+  const u = Math.floor(Math.min(view.W - 60, view.H - 60) / (2 * N));
+  return { cx: view.W / 2, cy: view.H / 2, u, N };
+}
+const AX = (g, x) => g.cx + x * g.u;
+const AY = (g, y) => g.cy - y * g.u;
+function drawAxes3(ctx, g){
+  const N = g.N;
+  ctx.lineWidth = 1;
+  for (let i = -N; i <= N; i++){
+    ctx.strokeStyle = i === 0 ? '#C7D3EC' : '#E9EFFA';
+    line(ctx, AX(g, i), AY(g, -N), AX(g, i), AY(g, N));
+    line(ctx, AX(g, -N), AY(g, i), AX(g, N), AY(g, i));
+  }
+  ctx.strokeStyle = '#8494B8'; ctx.lineWidth = 2;
+  line(ctx, AX(g, -N) - 12, g.cy, AX(g, N) + 18, g.cy);
+  line(ctx, g.cx, AY(g, -N) - 12, g.cx, AY(g, N) + 18);
+  ctx.fillStyle = '#8494B8';
+  ctx.beginPath();
+  ctx.moveTo(AX(g, N) + 24, g.cy); ctx.lineTo(AX(g, N) + 12, g.cy - 5); ctx.lineTo(AX(g, N) + 12, g.cy + 5);
+  ctx.closePath(); ctx.fill();
+  ctx.beginPath();
+  ctx.moveTo(g.cx, AY(g, N) - 18); ctx.lineTo(g.cx - 5, AY(g, N) - 6); ctx.lineTo(g.cx + 5, AY(g, N) - 6);
+  ctx.closePath(); ctx.fill();
+  ctx.font = '10px system-ui'; ctx.fillStyle = '#93A1C0';
+  for (let i = -N; i <= N; i++){
+    if (i === 0 || i % 2 !== 0) continue; // 只标偶数刻度，避免太密
+    ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+    ctx.fillText(String(i), AX(g, i), g.cy + 5);
+    ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+    ctx.fillText(String(i), g.cx - 6, AY(g, i));
+  }
+  ctx.textAlign = 'right'; ctx.textBaseline = 'top';
+  ctx.fillText('O', g.cx - 5, g.cy + 5);
+  ctx.font = 'bold 13px system-ui'; ctx.fillStyle = '#5B6B8C';
+  ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
+  ctx.fillText('x', AX(g, N) + 18, g.cy - 8);
+  ctx.textAlign = 'left'; ctx.textBaseline = 'top';
+  ctx.fillText('y', g.cx + 9, AY(g, N) - 16);
+}
+// —— 按屏幕像素逐点采样画函数曲线；|y| 超出范围时抬笔，天然处理渐近线断点 ——
+function plotFn3(ctx, g, W, f, color, width){
+  ctx.strokeStyle = color; ctx.lineWidth = width; ctx.lineCap = 'round';
+  ctx.beginPath();
+  let pen = false;
+  for (let sx = 0; sx <= W; sx += 2){
+    const y = f((sx - g.cx) / g.u);
+    if (!isFinite(y) || Math.abs(y) > g.N + 2){ pen = false; continue; }
+    if (pen) ctx.lineTo(sx, AY(g, y)); else ctx.moveTo(sx, AY(g, y));
+    pen = true;
+  }
+  ctx.stroke();
+}
+// —— 白底徽章标签（避免压线/压图时看不清） ——
+function badge3(ctx, cx, cy, text, color){
+  ctx.font = 'bold 12px system-ui';
+  const w = ctx.measureText(text).width;
+  ctx.fillStyle = 'rgba(255,255,255,.94)';
+  ctx.beginPath(); ctx.roundRect(cx - w / 2 - 9, cy - 11, w + 18, 22, 11); ctx.fill();
+  ctx.fillStyle = color;
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillText(text, cx, cy + 1);
+}
+
+/* ---------- 初三 1：一元二次方程（抛物线与 x 轴交点 = 方程的根） ---------- */
+(function initQuadraticEquation(){
+  const canvas = $('qeCanvas');
+  let view = fitCanvas(canvas);
+  const N = 8;
+  const st = { a: 1, b: -3, c: 2 };
+  const f = x => st.a * x * x + st.b * x + st.c;
+
+  function draw(){
+    const { ctx, W, H } = view;
+    if (W < 40) return;
+    ctx.clearRect(0, 0, W, H);
+    const g = axesGeom(view, N);
+    drawAxes3(ctx, g);
+    plotFn3(ctx, g, W, f, '#5B8DEF', 3.5);
+
+    const D = st.b * st.b - 4 * st.a * st.c;
+    if (D >= 0){
+      const sq = Math.sqrt(D);
+      const roots = D === 0 ? [-st.b / (2 * st.a)]
+        : [(-st.b + sq) / (2 * st.a), (-st.b - sq) / (2 * st.a)];
+      roots.forEach((r, i) => {
+        if (Math.abs(r) > N) return;
+        const px = AX(g, r);
+        ctx.beginPath(); ctx.arc(px, g.cy, 8, 0, Math.PI * 2);
+        ctx.fillStyle = '#FF9F43'; ctx.fill();
+        ctx.lineWidth = 3; ctx.strokeStyle = '#fff'; ctx.stroke();
+        // 两个根靠得近时标签左右错开
+        const off = roots.length === 2 && Math.abs(roots[0] - roots[1]) < 1.2 ? (i === 0 ? 26 : -26) : 0;
+        const name = roots.length === 1 ? 'x₁ = x₂ = ' : (i === 0 ? 'x₁ = ' : 'x₂ = ');
+        ctx.fillStyle = '#B95F0E'; ctx.font = 'bold 12px system-ui';
+        ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+        ctx.fillText(name + fmt2(r), px + off, g.cy + 13);
+      });
+    }else{
+      badge3(ctx, W / 2, H - 22, 'Δ < 0：抛物线与 x 轴没有交点', '#C0392B');
+    }
+  }
+
+  function refresh(){
+    const { a, b, c } = st;
+    const D = b * b - 4 * a * c;
+    $('qeAVal').textContent = fmt(a);
+    $('qeBVal').textContent = fmt(b);
+    $('qeCVal').textContent = fmt(c);
+    setChip2($('qeDelta'), fmt2(D));
+    const stEl = $('qeState'), x1 = $('qeX1'), x2 = $('qeX2');
+    if (D > 0){
+      const sq = Math.sqrt(D);
+      const r1 = (-b + sq) / (2 * a), r2 = (-b - sq) / (2 * a);
+      stEl.className = 'chip c-green';
+      setChip2(stEl, 'Δ > 0：两个不相等的实数根');
+      x1.className = 'chip c-orange'; x2.className = 'chip c-orange';
+      setChip2(x1, 'x₁ = (−b+√Δ)/2a ≈ ' + fmt2(r1));
+      setChip2(x2, 'x₂ = (−b−√Δ)/2a ≈ ' + fmt2(r2));
+      $('qeNote').textContent = '代入求根公式：x = (−b ± √Δ) / 2a = (' + fmt(-b) + ' ± √' + fmt2(D) + ') / (2×' + fmt(a) + ') ≈ (' + fmt(-b) + ' ± ' + sq.toFixed(2) + ') / ' + fmt2(2 * a) + '，得 x₁ ≈ ' + fmt2(r1) + '、x₂ ≈ ' + fmt2(r2) + '，正好是图上两个交点的横坐标。';
+    }else if (D === 0){
+      const r = -b / (2 * a);
+      stEl.className = 'chip c-orange';
+      setChip2(stEl, 'Δ = 0：两个相等的实数根');
+      x1.className = 'chip c-orange'; x2.className = 'chip c-gray';
+      setChip2(x1, 'x₁ = x₂ = −b/2a = ' + fmt2(r));
+      setChip2(x2, '抛物线刚好贴着 x 轴');
+      $('qeNote').textContent = 'Δ = 0 时 √Δ = 0，± 不起作用：x = −b / 2a = ' + fmt(-b) + ' / (2×' + fmt(a) + ') = ' + fmt2(r) + '。抛物线的顶点正好落在 x 轴上，只碰得到一个点。';
+    }else{
+      stEl.className = 'chip c-red';
+      setChip2(stEl, 'Δ < 0：没有实数根');
+      x1.className = 'chip c-gray'; x2.className = 'chip c-gray';
+      setChip2(x1, 'x₁：无实数根');
+      setChip2(x2, 'x₂：无实数根');
+      $('qeNote').textContent = 'Δ = ' + fmt2(D) + ' < 0，√Δ 在实数范围内不存在，求根公式“卡壳”了——反映在图上，就是抛物线整个在 x 轴的' +
+        (a > 0 ? '上方（开口向上，最低点都高过地面）' : '下方（开口向下，最高点也够不到地面）') + '，一个交点都没有。';
+    }
+    draw();
+  }
+
+  // —— a ≠ 0：拖到 0 时按来向跳到 ±0.5 ——
+  $('qeA').addEventListener('input', e => {
+    let v = +e.target.value;
+    if (v === 0){ v = st.a > 0 ? -0.5 : 0.5; e.target.value = v; }
+    st.a = v; refresh();
+  });
+  $('qeB').addEventListener('input', e => { st.b = +e.target.value; refresh(); });
+  $('qeC').addEventListener('input', e => { st.c = +e.target.value; refresh(); });
+  $('qeReset').addEventListener('click', () => {
+    st.a = 1; st.b = -3; st.c = 2;
+    $('qeA').value = 1; $('qeB').value = -3; $('qeC').value = 2;
+    refresh(); clickSound();
+  });
+  $('qeRandom').addEventListener('click', () => {
+    let a = randInt(-6, 6); if (a === 0) a = 1;
+    st.a = a / 2; st.b = randInt(-6, 6); st.c = randInt(-6, 6);
+    $('qeA').value = st.a; $('qeB').value = st.b; $('qeC').value = st.c;
+    refresh(); clickSound();
+  });
+
+  function refit(){ view = fitCanvas(canvas); draw(); }
+  redrawAll.push(refit);
+  refresh();
+})();
+
+/* ---------- 初三 2：二次函数 y = a(x−h)² + k ---------- */
+(function initQuadraticFunc(){
+  const canvas = $('qfCanvas');
+  let view = fitCanvas(canvas);
+  const N = 8;
+  const st = { a: 1, h: 2, k: -3 };
+  const f = x => st.a * (x - st.h) * (x - st.h) + st.k;
+
+  function draw(){
+    const { ctx, W, H } = view;
+    if (W < 40) return;
+    ctx.clearRect(0, 0, W, H);
+    const g = axesGeom(view, N);
+    drawAxes3(ctx, g);
+
+    // —— 参考抛物线 y = x²（灰色半透明虚线） ——
+    ctx.save();
+    ctx.globalAlpha = 0.55;
+    ctx.setLineDash([6, 5]);
+    plotFn3(ctx, g, W, x => x * x, '#93A5C9', 2);
+    ctx.restore();
+    ctx.fillStyle = '#93A5C9'; ctx.font = '12px system-ui';
+    ctx.textAlign = 'left'; ctx.textBaseline = 'top';
+    ctx.fillText('参照：y = x²', 14, 10);
+
+    // —— 对称轴 x = h（绿色虚线，标签放底部避免和 y 轴标签挤一起） ——
+    if (Math.abs(st.h) <= N){
+      const hx = AX(g, st.h);
+      ctx.setLineDash([6, 5]); ctx.strokeStyle = '#1E9E54'; ctx.lineWidth = 2;
+      line(ctx, hx, 10, hx, H - 10);
+      ctx.setLineDash([]);
+      ctx.fillStyle = '#157F44'; ctx.font = 'bold 12px system-ui';
+      ctx.textBaseline = 'bottom';
+      const axisLabel = '对称轴 x = ' + fmt(st.h);
+      if (hx < W - 130){ ctx.textAlign = 'left'; ctx.fillText(axisLabel, hx + 7, H - 8); }
+      else { ctx.textAlign = 'right'; ctx.fillText(axisLabel, hx - 7, H - 8); }
+    }
+
+    // —— 抛物线本体 ——
+    plotFn3(ctx, g, W, f, '#5B8DEF', 3.5);
+
+    // —— 顶点（橙色，a>0 标签放顶点下方，a<0 放上方） ——
+    if (Math.abs(st.h) <= N && Math.abs(st.k) <= N){
+      const vx = AX(g, st.h), vy = AY(g, st.k);
+      ctx.beginPath(); ctx.arc(vx, vy, 9, 0, Math.PI * 2);
+      ctx.fillStyle = '#FF9F43'; ctx.fill();
+      ctx.lineWidth = 3; ctx.strokeStyle = '#fff'; ctx.stroke();
+      ctx.fillStyle = '#B95F0E'; ctx.font = 'bold 12px system-ui';
+      ctx.textBaseline = 'middle';
+      const vLabel = '顶点 (' + fmt(st.h) + ', ' + fmt(st.k) + ')';
+      const ty = vy + (st.a > 0 ? 22 : -22);
+      if (vx < W - 130){ ctx.textAlign = 'left'; ctx.fillText(vLabel, vx + 13, ty); }
+      else { ctx.textAlign = 'right'; ctx.fillText(vLabel, vx - 13, ty); }
+    }
+  }
+
+  function refresh(){
+    const { a, h, k } = st;
+    $('qfAVal').textContent = fmt(a);
+    $('qfHVal').textContent = fmt(h);
+    $('qfKVal').textContent = fmt(k);
+    setChip2($('qfVertex'), '(' + fmt(h) + ', ' + fmt(k) + ')');
+    const openEl = $('qfOpen');
+    openEl.className = a > 0 ? 'chip c-green' : 'chip c-red';
+    setChip2(openEl, a > 0 ? '开口向上（a = ' + fmt(a) + ' > 0）' : '开口向下（a = ' + fmt(a) + ' < 0）');
+    setChip2($('qfExt'), (a > 0 ? '最小值 = ' : '最大值 = ') + fmt(k) + '（当 x = ' + fmt(h) + '）');
+    const cmp = Math.abs(a) > 1 ? '比 y = x² 更窄' : Math.abs(a) < 1 ? '比 y = x² 更宽' : '和 y = x² 一样宽，只是搬了个家';
+    $('qfNote').textContent = '顶点式一眼读出：顶点 (h, k) = (' + fmt(h) + ', ' + fmt(k) + ')，对称轴 x = ' + fmt(h) + '。' +
+      'h 管左右平移、k 管上下平移；|a| = ' + fmt(Math.abs(a)) + '，开口' + cmp + '。' +
+      (a > 0 ? 'a > 0 开口向上，顶点是最低点，函数有最小值 k。' : 'a < 0 开口向下，顶点是最高点，函数有最大值 k。');
+    draw();
+  }
+
+  // —— a ≠ 0：拖到 0 时按来向跳到 ±0.25 ——
+  $('qfA').addEventListener('input', e => {
+    let v = +e.target.value;
+    if (v === 0){ v = st.a > 0 ? -0.25 : 0.25; e.target.value = v; }
+    st.a = v; refresh();
+  });
+  $('qfH').addEventListener('input', e => { st.h = +e.target.value; refresh(); });
+  $('qfK').addEventListener('input', e => { st.k = +e.target.value; refresh(); });
+  $('qfReset').addEventListener('click', () => {
+    st.a = 1; st.h = 2; st.k = -3;
+    $('qfA').value = 1; $('qfH').value = 2; $('qfK').value = -3;
+    refresh(); clickSound();
+  });
+  $('qfRandom').addEventListener('click', () => {
+    let a = randInt(-8, 8); if (a === 0) a = 4;
+    st.a = a / 4; st.h = randInt(-5, 5); st.k = randInt(-5, 5);
+    $('qfA').value = st.a; $('qfH').value = st.h; $('qfK').value = st.k;
+    refresh(); clickSound();
+  });
+
+  function refit(){ view = fitCanvas(canvas); draw(); }
+  redrawAll.push(refit);
+  refresh();
+})();
+
+/* ---------- 初三 3：反比例函数 y = k/x ---------- */
+(function initInverseFunc(){
+  const canvas = $('rfCanvas');
+  let view = fitCanvas(canvas);
+  const N = 8;
+  const st = { k: 4, px: 2 }; // P 在双曲线上，px 为其横坐标（符号决定在哪一支）
+  let drag = false;
+
+  const py = () => st.k / st.px;
+  // —— 横坐标离 y 轴太近会让 y 爆掉：限制 |px| ≥ |k|/N（且至少 0.5），吸附到 0.5 ——
+  function clampPx(){
+    const minX = Math.max(0.5, Math.abs(st.k) / N);
+    let x = Math.max(-N, Math.min(N, st.px));
+    if (Math.abs(x) < minX) x = (x < 0 ? -1 : 1) * minX;
+    x = Math.round(x * 2) / 2;
+    if (Math.abs(x) < minX) x = (x < 0 ? -1 : 1) * Math.ceil(minX * 2) / 2;
+    st.px = x;
+  }
+
+  function draw(){
+    const { ctx, W, H } = view;
+    if (W < 40) return;
+    ctx.clearRect(0, 0, W, H);
+    const g = axesGeom(view, N);
+    drawAxes3(ctx, g);
+
+    // —— 双曲线两支（plotFn3 在渐近线处自动抬笔） ——
+    plotFn3(ctx, g, W, x => st.k / x, '#5B8DEF', 3.5);
+
+    // —— P 向两轴作垂线围成的矩形（面积 = |k|） ——
+    const P = { x: AX(g, st.px), y: AY(g, py()) };
+    const rx = Math.min(g.cx, P.x), ry = Math.min(g.cy, P.y);
+    const rw = Math.abs(P.x - g.cx), rh = Math.abs(P.y - g.cy);
+    ctx.fillStyle = 'rgba(255,159,67,.30)';
+    ctx.fillRect(rx, ry, rw, rh);
+    ctx.setLineDash([5, 4]); ctx.strokeStyle = '#E08A2D'; ctx.lineWidth = 2;
+    ctx.strokeRect(rx, ry, rw, rh);
+    ctx.setLineDash([]);
+    if (rw > 84 && rh > 30){
+      ctx.fillStyle = '#B95F0E'; ctx.font = 'bold 12px system-ui';
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText('面积 = |k| = ' + Math.abs(st.k), rx + rw / 2, ry + rh / 2);
+    }
+
+    // —— 点 P 与坐标标签（沿远离原点方向放） ——
+    ctx.beginPath(); ctx.arc(P.x, P.y, 10, 0, Math.PI * 2);
+    ctx.fillStyle = '#FF9F43'; ctx.fill();
+    ctx.lineWidth = 3; ctx.strokeStyle = '#fff'; ctx.stroke();
+    const dl = Math.hypot(P.x - g.cx, P.y - g.cy) || 1;
+    const lx = P.x + (P.x - g.cx) / dl * 26, ly = P.y + (P.y - g.cy) / dl * 26;
+    ctx.fillStyle = '#B95F0E'; ctx.font = 'bold 12px system-ui';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText('P(' + fmt2(st.px) + ', ' + fmt2(py()) + ')', lx, ly);
+    ctx.fillStyle = '#7A89A8'; ctx.font = '12px system-ui';
+    ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+    ctx.fillText('← 拖动点 P', 14, H - 10);
+  }
+
+  function refresh(){
+    clampPx();
+    const y = py();
+    $('rfKVal').textContent = fmt(st.k);
+    setChip2($('rfKOut'), fmt(st.k));
+    setChip2($('rfP'), 'P(' + fmt2(st.px) + ', ' + fmt2(y) + ')');
+    setChip2($('rfXY'), 'x·y = ' + fmt2(st.px) + ' × ' + fmt2(y) + ' = ' + fmt2(st.px * y) + ' = k ✓');
+    setChip2($('rfArea'), '矩形面积 = |k| = ' + Math.abs(st.k));
+    $('rfNote').textContent = st.k > 0
+      ? 'k = ' + st.k + ' > 0：双曲线落在第一、三象限，每一支上 y 都随 x 增大而减小。P 拖到哪儿，x·y 都等于 k，橙色矩形的面积恒为 |k|。'
+      : 'k = ' + fmt(st.k) + ' < 0：双曲线落在第二、四象限，每一支上 y 都随 x 增大而增大。x·y 是负数 ' + fmt(st.k) + '，矩形面积恒为 |k| = ' + Math.abs(st.k) + '。';
+    draw();
+  }
+
+  $('rfK').addEventListener('input', e => {
+    let v = +e.target.value;
+    if (v === 0){ v = st.k > 0 ? -1 : 1; e.target.value = v; }
+    st.k = v; refresh();
+  });
+  onPointer(canvas, {
+    down(p){
+      const g = axesGeom(view, N);
+      const P = { x: AX(g, st.px), y: AY(g, py()) };
+      if (Math.hypot(p.x - P.x, p.y - P.y) < 28) drag = true;
+    },
+    move(p){
+      if (!drag) return;
+      const g = axesGeom(view, N);
+      st.px = (p.x - g.cx) / g.u;
+      clampPx();
+      refresh();
+    },
+    up(){ if (drag) clickSound(); drag = false; }
+  });
+  $('rfReset').addEventListener('click', () => {
+    st.k = 4; st.px = 2; $('rfK').value = 4; refresh(); clickSound();
+  });
+  $('rfRandom').addEventListener('click', () => {
+    let k = randInt(-12, 12); if (k === 0) k = 6;
+    st.k = k;
+    st.px = (Math.random() < 0.5 ? -1 : 1) * randInt(1, N * 2) / 2;
+    $('rfK').value = st.k; refresh(); clickSound();
+  });
+
+  function refit(){ view = fitCanvas(canvas); draw(); }
+  redrawAll.push(refit);
+  refresh();
+})();
+
+/* ---------- 初三 4：锐角三角函数 ---------- */
+(function initTrig(){
+  const canvas = $('tgCanvas');
+  let view = fitCanvas(canvas);
+  const HYP = 5; // 斜边固定为 5
+  const st = { deg: 30 };
+  let drag = false, lastEx = 0;
+
+  // —— 特殊角精确值（KaTeX + 纯文本回退） ——
+  const EXACT = {
+    30: ['\\sin 30^\\circ=\\dfrac{1}{2}\\qquad \\cos 30^\\circ=\\dfrac{\\sqrt{3}}{2}\\qquad \\tan 30^\\circ=\\dfrac{\\sqrt{3}}{3}',
+         'sin 30° = 1/2　　cos 30° = √3/2　　tan 30° = √3/3'],
+    45: ['\\sin 45^\\circ=\\dfrac{\\sqrt{2}}{2}\\qquad \\cos 45^\\circ=\\dfrac{\\sqrt{2}}{2}\\qquad \\tan 45^\\circ=1',
+         'sin 45° = √2/2　　cos 45° = √2/2　　tan 45° = 1'],
+    60: ['\\sin 60^\\circ=\\dfrac{\\sqrt{3}}{2}\\qquad \\cos 60^\\circ=\\dfrac{1}{2}\\qquad \\tan 60^\\circ=\\sqrt{3}',
+         'sin 60° = √3/2　　cos 60° = 1/2　　tan 60° = √3']
+  };
+
+  // —— 直角顶点 C 在左下，θ 在右下的 A，B 在 C 正上方 ——
+  function verts(){
+    const rad = st.deg * Math.PI / 180;
+    const adj = HYP * Math.cos(rad), opp = HYP * Math.sin(rad);
+    const x0 = 116, y0 = view.H - 56; // x0 留出左侧"对边"标签的位置
+    const u = Math.min((view.W - x0 - 110) / adj, (y0 - 70) / opp);
+    return {
+      C: { x: x0, y: y0 }, A: { x: x0 + adj * u, y: y0 }, B: { x: x0, y: y0 - opp * u },
+      adj, opp, u
+    };
+  }
+
+  function draw(){
+    const { ctx, W, H } = view;
+    if (W < 40) return;
+    ctx.clearRect(0, 0, W, H);
+    const { A, B, C, adj, opp } = verts();
+
+    // —— 三角形本体 ——
+    ctx.beginPath();
+    ctx.moveTo(C.x, C.y); ctx.lineTo(A.x, A.y); ctx.lineTo(B.x, B.y);
+    ctx.closePath();
+    ctx.fillStyle = 'rgba(91,141,239,.10)'; ctx.fill();
+    // 对边橙、邻边绿、斜边蓝
+    ctx.lineCap = 'round';
+    ctx.strokeStyle = '#FF9F43'; ctx.lineWidth = 4; line(ctx, C.x, C.y, B.x, B.y);
+    ctx.strokeStyle = '#2ECC71'; line(ctx, C.x, C.y, A.x, A.y);
+    ctx.strokeStyle = '#5B8DEF'; line(ctx, A.x, A.y, B.x, B.y);
+
+    // —— C 处直角符号、A 处角弧与 θ 标注 ——
+    ctx.strokeStyle = '#93A5C9'; ctx.lineWidth = 1.8;
+    ctx.beginPath();
+    ctx.moveTo(C.x + 13, C.y); ctx.lineTo(C.x + 13, C.y - 13); ctx.lineTo(C.x, C.y - 13);
+    ctx.stroke();
+    const rad = st.deg * Math.PI / 180;
+    const arcR = Math.min(36, Math.max(18, (A.x - C.x) * 0.45));
+    ctx.strokeStyle = '#8494B8'; ctx.lineWidth = 2.5;
+    ctx.beginPath(); ctx.arc(A.x, A.y, arcR, rad - Math.PI, -Math.PI, true); ctx.stroke();
+    ctx.fillStyle = '#5B6B8C'; ctx.font = 'bold 13px system-ui';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    const bisA = rad / 2 - Math.PI; // 角平分线方向（屏幕坐标）
+    ctx.fillText('θ=' + st.deg + '°', A.x + (arcR + 26) * Math.cos(bisA), A.y + (arcR + 26) * Math.sin(bisA));
+
+    // —— 边名与边长标注 ——
+    ctx.font = 'bold 13px system-ui';
+    ctx.fillStyle = '#B95F0E'; ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+    ctx.fillText('对边 = ' + opp.toFixed(2), C.x - 10, (C.y + B.y) / 2);
+    ctx.fillStyle = '#157F44'; ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+    ctx.fillText('邻边 = ' + adj.toFixed(2), (C.x + A.x) / 2, C.y + 10);
+    ctx.save(); // 斜边标签沿斜边方向旋转，放在外侧（远离 C 的一侧）；角度归一化保证文字不颠倒
+    const mx = (A.x + B.x) / 2, my = (A.y + B.y) / 2;
+    let ang = Math.atan2(B.y - A.y, B.x - A.x);
+    if (ang > Math.PI / 2) ang -= Math.PI;
+    if (ang < -Math.PI / 2) ang += Math.PI;
+    ctx.translate(mx, my); ctx.rotate(ang);
+    ctx.fillStyle = '#2F5BC4'; ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
+    ctx.fillText('斜边 = ' + HYP, 0, -9);
+    ctx.restore();
+
+    // —— 顶点：B 可拖动 ——
+    const dot = (p, color, r) => {
+      ctx.beginPath(); ctx.arc(p.x, p.y, r, 0, Math.PI * 2);
+      ctx.fillStyle = color; ctx.fill();
+      ctx.lineWidth = 3; ctx.strokeStyle = '#fff'; ctx.stroke();
+    };
+    dot(C, '#2B3A55', 5); dot(A, '#2B3A55', 5); dot(B, '#5B8DEF', 11);
+    ctx.fillStyle = '#2B3A55'; ctx.font = 'bold 13px system-ui';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+    ctx.fillText('A', A.x + 2, A.y + 10);
+    ctx.textAlign = 'right'; ctx.textBaseline = 'top';
+    ctx.fillText('C', C.x - 4, C.y + 10);
+    ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
+    ctx.fillText('B', B.x, B.y - 15);
+    ctx.fillStyle = '#7A89A8'; ctx.font = '12px system-ui';
+    ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+    ctx.fillText('← 拖动顶点 B', 14, H - 10);
+  }
+
+  function refresh(){
+    const rad = st.deg * Math.PI / 180;
+    const s = Math.sin(rad), c = Math.cos(rad), t = s / c;
+    $('tgAngVal').textContent = st.deg + '°';
+    setChip2($('tgDeg'), st.deg + '°');
+    setChip2($('tgSin'), 'sin θ = 对边/斜边 ≈ ' + s.toFixed(3));
+    setChip2($('tgCos'), 'cos θ = 邻边/斜边 ≈ ' + c.toFixed(3));
+    setChip2($('tgTan'), 'tan θ = 对边/邻边 ≈ ' + t.toFixed(3));
+    [30, 45, 60].forEach(d => { $('tgB' + d).className = st.deg === d ? 'btn btn-primary' : 'btn'; });
+    const exEl = $('tgExact');
+    if (EXACT[st.deg]){
+      renderTex(exEl, EXACT[st.deg][0], EXACT[st.deg][1]);
+      if (lastEx !== st.deg){ flash(exEl.closest('.eq-display')); lastEx = st.deg; }
+    }else{
+      exEl.textContent = '当前 θ = ' + st.deg + '°，不是特殊角；点上面的 30° / 45° / 60° 按钮，这里会显示带根号的精确值。';
+      lastEx = 0;
+    }
+    draw();
+  }
+
+  function setDeg(d){
+    st.deg = Math.max(5, Math.min(85, Math.round(d)));
+    $('tgAng').value = st.deg;
+    refresh();
+  }
+  $('tgAng').addEventListener('input', e => { st.deg = +e.target.value; refresh(); });
+  [30, 45, 60].forEach(d => $('tgB' + d).addEventListener('click', () => { setDeg(d); clickSound(); }));
+  $('tgReset').addEventListener('click', () => { setDeg(30); clickSound(); });
+  $('tgRandom').addEventListener('click', () => { setDeg(randInt(5, 85)); clickSound(); });
+
+  // —— 拖动 B：由指针相对 A 的方向直接算出 θ ——
+  onPointer(canvas, {
+    down(p){
+      const { B } = verts();
+      if (Math.hypot(p.x - B.x, p.y - B.y) < 30) drag = true;
+    },
+    move(p){
+      if (!drag) return;
+      const { A } = verts();
+      const d = Math.atan2(A.y - p.y, A.x - p.x) * 180 / Math.PI;
+      setDeg(d);
+    },
+    up(){ if (drag) clickSound(); drag = false; }
+  });
+
+  function refit(){ view = fitCanvas(canvas); draw(); }
+  redrawAll.push(refit);
+  refresh();
+})();
+
+/* ---------- 初三 5：圆（圆周角定理 + 弧长与扇形面积） ---------- */
+(function initCircle(){
+  const canvas = $('ciCanvas');
+  let view = fitCanvas(canvas);
+  const A_ANG = 150, B_ANG = 30; // 弦端点的屏幕角度（度）：0=右，90=下，劣弧在下方
+  const st = { p: 270 };         // P 的屏幕角度，限制在优弧上
+  let drag = false, touched = false;
+
+  const canvas2 = $('ciSecCanvas');
+  let view2 = fitCanvas(canvas2);
+  const st2 = { r: 3, n: 120 };
+
+  function geomC(){
+    const R = Math.min(view.W, view.H) / 2 - 46;
+    return { cx: view.W / 2, cy: view.H / 2 + 6, R };
+  }
+  const ptAt = (g, deg) => ({
+    x: g.cx + g.R * Math.cos(deg * Math.PI / 180),
+    y: g.cy + g.R * Math.sin(deg * Math.PI / 180)
+  });
+  function angAt(P, Q1, Q2){
+    const a1 = Math.atan2(Q1.y - P.y, Q1.x - P.x), a2 = Math.atan2(Q2.y - P.y, Q2.x - P.x);
+    let d = Math.abs(a2 - a1) * 180 / Math.PI;
+    return d > 180 ? 360 - d : d;
+  }
+
+  function draw(){
+    const { ctx, W, H } = view;
+    if (W < 40) return;
+    ctx.clearRect(0, 0, W, H);
+    const g = geomC();
+    const O = { x: g.cx, y: g.cy };
+    const A = ptAt(g, A_ANG), B = ptAt(g, B_ANG), P = ptAt(g, st.p);
+
+    // —— 圆与同弧 AB（劣弧，加粗蓝） ——
+    ctx.strokeStyle = '#8494B8'; ctx.lineWidth = 2.5;
+    ctx.beginPath(); ctx.arc(g.cx, g.cy, g.R, 0, Math.PI * 2); ctx.stroke();
+    ctx.strokeStyle = '#3F6FD1'; ctx.lineWidth = 5; ctx.lineCap = 'round';
+    ctx.beginPath(); ctx.arc(g.cx, g.cy, g.R, B_ANG * Math.PI / 180, A_ANG * Math.PI / 180); ctx.stroke();
+
+    // —— 半径 OA、OB（蓝）与弦 PA、PB（橙） ——
+    ctx.lineWidth = 2.5; ctx.strokeStyle = '#5B8DEF';
+    line(ctx, O.x, O.y, A.x, A.y); line(ctx, O.x, O.y, B.x, B.y);
+    ctx.strokeStyle = '#FF9F43';
+    line(ctx, P.x, P.y, A.x, A.y); line(ctx, P.x, P.y, B.x, B.y);
+
+    // —— 圆心角 ∠AOB 的角弧与度数（劣弧一侧） ——
+    const central = Math.round(angAt(O, A, B));
+    ctx.strokeStyle = '#3F6FD1'; ctx.lineWidth = 2.5;
+    ctx.beginPath(); ctx.arc(O.x, O.y, 32, B_ANG * Math.PI / 180, A_ANG * Math.PI / 180); ctx.stroke();
+    ctx.fillStyle = '#2F5BC4'; ctx.font = 'bold 13px system-ui';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText(central + '°', O.x, O.y + 50); // 角平分线朝正下方
+
+    // —— 圆周角 ∠APB 的角弧与度数（拖动时变绿加粗，提示“不变”） ——
+    const insc = Math.round(angAt(P, A, B));
+    const a1 = Math.atan2(A.y - P.y, A.x - P.x), a2 = Math.atan2(B.y - P.y, B.x - P.x);
+    let dd = (a2 - a1) % (Math.PI * 2);
+    if (dd < 0) dd += Math.PI * 2;
+    ctx.strokeStyle = drag ? '#1E9E54' : '#E08A2D'; ctx.lineWidth = drag ? 4 : 2.5;
+    ctx.beginPath(); ctx.arc(P.x, P.y, 24, a1, a2, dd > Math.PI); ctx.stroke();
+    const u1 = { x: Math.cos(a1), y: Math.sin(a1) }, u2 = { x: Math.cos(a2), y: Math.sin(a2) };
+    let bx = u1.x + u2.x, by = u1.y + u2.y;
+    const bl = Math.hypot(bx, by) || 1;
+    bx /= bl; by /= bl;
+    ctx.fillStyle = drag ? '#157F44' : '#B95F0E'; ctx.font = 'bold 13px system-ui';
+    ctx.fillText(insc + '°', P.x + bx * 42, P.y + by * 42);
+
+    // —— 点与标签 ——
+    const dot = (p, color, r) => {
+      ctx.beginPath(); ctx.arc(p.x, p.y, r, 0, Math.PI * 2);
+      ctx.fillStyle = color; ctx.fill();
+      ctx.lineWidth = 3; ctx.strokeStyle = '#fff'; ctx.stroke();
+    };
+    dot(O, '#2ECC71', 6); dot(A, '#2B3A55', 6); dot(B, '#2B3A55', 6);
+    dot(P, '#FF9F43', 11);
+    ctx.fillStyle = '#2B3A55'; ctx.font = 'bold 13px system-ui';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText('O', O.x - 14, O.y + 2);
+    ctx.fillText('A', A.x - 16, A.y + 8);
+    ctx.fillText('B', B.x + 16, B.y + 8);
+    ctx.fillStyle = '#B95F0E';
+    ctx.fillText('P', P.x + bx * 66, P.y + by * 66);
+    ctx.fillStyle = '#7A89A8'; ctx.font = '12px system-ui';
+    ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+    ctx.fillText('← 拖动点 P 沿优弧滑动', 14, H - 10);
+  }
+
+  function refresh(){
+    const g = geomC();
+    const O = { x: g.cx, y: g.cy };
+    const central = Math.round(angAt(O, ptAt(g, A_ANG), ptAt(g, B_ANG)));
+    const insc = Math.round(angAt(ptAt(g, st.p), ptAt(g, A_ANG), ptAt(g, B_ANG)));
+    setChip2($('ciCentral'), '圆心角 ∠AOB = ' + central + '°');
+    setChip2($('ciInsc'), '圆周角 ∠APB = ' + insc + '°');
+    setChip2($('ciOk'), '✓ ∠APB = ∠AOB ÷ 2（' + central + '° ÷ 2 = ' + insc + '°）');
+    setChip2($('ciFixed'), touched ? 'P 在动，∠APB 还是 ' + insc + '°！' : '同弧 AB 所对的圆周角都相等');
+    draw();
+  }
+
+  onPointer(canvas, {
+    down(p){
+      const g = geomC();
+      const P = ptAt(g, st.p);
+      if (Math.hypot(p.x - P.x, p.y - P.y) < 28){ drag = true; flash($('ciFixed')); }
+    },
+    move(p){
+      if (!drag) return;
+      const g = geomC();
+      let a = Math.atan2(p.y - g.cy, p.x - g.cx) * 180 / Math.PI;
+      if (a < 0) a += 360;         // 归一到 [0, 360)
+      if (a <= B_ANG) a += 360;    // 优弧参数区间：(A_ANG, B_ANG + 360)
+      st.p = Math.max(A_ANG + 5, Math.min(B_ANG + 360 - 5, a));
+      touched = true;
+      refresh();
+    },
+    up(){ if (drag) clickSound(); drag = false; refresh(); } // 松手后重绘，角弧恢复橙色
+  });
+  $('ciReset').addEventListener('click', () => { st.p = 270; refresh(); clickSound(); });
+  $('ciRandom').addEventListener('click', () => { st.p = randInt(A_ANG + 10, B_ANG + 350); refresh(); clickSound(); });
+
+  // —— 5.2 弧长与扇形面积 ——
+  function draw2(){
+    const { ctx, W, H } = view2;
+    if (W < 40) return;
+    ctx.clearRect(0, 0, W, H);
+    const R = st2.r / 5 * (Math.min(W, H) / 2 - 42);
+    const cx = W / 2, cy = H / 2 + 10;
+    const a0 = -Math.PI / 2; // 从正上方起
+    const a1 = a0 + st2.n * Math.PI / 180;
+
+    // —— 完整圆（虚线底，衬托“扇形是圆的一部分”） ——
+    ctx.setLineDash([5, 5]); ctx.strokeStyle = '#D5DDF0'; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.arc(cx, cy, R, 0, Math.PI * 2); ctx.stroke();
+    ctx.setLineDash([]);
+
+    // —— 扇形 ——
+    ctx.beginPath();
+    ctx.moveTo(cx, cy); ctx.arc(cx, cy, R, a0, a1); ctx.closePath();
+    ctx.fillStyle = 'rgba(91,141,239,.26)'; ctx.fill();
+    ctx.strokeStyle = '#3F6FD1'; ctx.lineWidth = 2.5; ctx.stroke();
+    // 弧（橙色加粗）
+    ctx.strokeStyle = '#FF9F43'; ctx.lineWidth = 4.5; ctx.lineCap = 'round';
+    ctx.beginPath(); ctx.arc(cx, cy, R, a0, a1); ctx.stroke();
+
+    // —— 圆心角弧、n° 标注、r 标注、弧 l 标注 ——
+    ctx.strokeStyle = '#8494B8'; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.arc(cx, cy, 22, a0, a1); ctx.stroke();
+    const mid = (a0 + a1) / 2;
+    ctx.fillStyle = '#5B6B8C'; ctx.font = 'bold 12px system-ui';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText('n=' + st2.n + '°', cx + 40 * Math.cos(mid), cy + 40 * Math.sin(mid));
+    ctx.fillStyle = '#2F5BC4';
+    ctx.fillText('r = ' + st2.r, cx + R / 2 * Math.cos(a0) + 20 * Math.cos(a0 + Math.PI / 2), cy + R / 2 * Math.sin(a0) + 20 * Math.sin(a0 + Math.PI / 2));
+    ctx.fillStyle = '#B95F0E'; ctx.font = 'bold 13px system-ui';
+    ctx.fillText('弧 l', cx + (R + 18) * Math.cos(mid), cy + (R + 18) * Math.sin(mid));
+    ctx.beginPath(); ctx.arc(cx, cy, 5, 0, Math.PI * 2);
+    ctx.fillStyle = '#2B3A55'; ctx.fill();
+  }
+
+  // —— 系数 × π 的简洁写法：num/den · π → '2π'、'5π/4' ——
+  function fracPi(num, den){
+    const g = gcd(num, den);
+    const a = num / g, b = den / g;
+    if (b === 1) return a === 1 ? 'π' : a + 'π';
+    return (a === 1 ? '' : a) + 'π/' + b;
+  }
+
+  function refresh2(){
+    const r = st2.r, n = st2.n;
+    const l = n * Math.PI * r / 180, S = n * Math.PI * r * r / 360;
+    $('ciRVal').textContent = String(r);
+    $('ciNVal').textContent = n + '°';
+    setChip2($('ciArcL'), '弧长 l = nπr/180 ≈ ' + l.toFixed(2));
+    setChip2($('ciArcS'), '面积 S = nπr²/360 ≈ ' + S.toFixed(2));
+    const g = gcd(n, 360);
+    setChip2($('ciFrac'), '扇形占整圆的 ' + (n / g) + '/' + (360 / g));
+    // l = (n·2r)/360 · π；S = (n·(2r)²)/1440 · π（用整数约分，r 可以是 .5）
+    const lExact = fracPi(n * 2 * r, 360), sExact = fracPi(n * 4 * r * r, 1440);
+    $('ciSecNote').textContent = 'l = nπr/180 = ' + n + '×π×' + r + ' ÷ 180 = ' + lExact + ' ≈ ' + l.toFixed(2) +
+      '；S = nπr²/360 = ' + n + '×π×' + fmt2(r * r) + ' ÷ 360 = ' + sExact + ' ≈ ' + S.toFixed(2) + '。';
+    draw2();
+  }
+
+  $('ciR').addEventListener('input', e => { st2.r = +e.target.value; refresh2(); });
+  $('ciN').addEventListener('input', e => { st2.n = +e.target.value; refresh2(); });
+  $('ciSecReset').addEventListener('click', () => {
+    st2.r = 3; st2.n = 120; $('ciR').value = 3; $('ciN').value = 120; refresh2(); clickSound();
+  });
+  $('ciSecRandom').addEventListener('click', () => {
+    st2.r = randInt(2, 10) / 2; st2.n = randInt(6, 66) * 5;
+    $('ciR').value = st2.r; $('ciN').value = st2.n; refresh2(); clickSound();
+  });
+
+  function refit(){ view = fitCanvas(canvas); view2 = fitCanvas(canvas2); draw(); draw2(); }
+  redrawAll.push(refit);
+  refresh();
+  refresh2();
+})();
+
+/* ---------- 初三 6：概率初步（掷骰子模拟器） ---------- */
+(function initProbability(){
+  const canvas = $('pbCanvas');
+  let view = fitCanvas(canvas);
+  const st = { counts: [0, 0, 0, 0, 0, 0], total: 0, last: 0 };
+  let rolling = false;
+
+  function geom(){ return { x0: 46, x1: view.W - 20, y0: view.H - 40, y1: 50 }; }
+  const yMax = () => Math.max(0.4, Math.ceil(Math.max.apply(null, st.counts) / (st.total || 1) * 1.25 * 10) / 10);
+
+  // —— 画一颗骰子（圆角方块 + 点数圆点） ——
+  function drawDie(ctx, x, y, s, v){
+    ctx.fillStyle = '#fff'; ctx.strokeStyle = '#8494B8'; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.roundRect(x, y, s, s, 9); ctx.fill(); ctx.stroke();
+    const PIPS = {
+      1: [[.5, .5]],
+      2: [[.3, .3], [.7, .7]],
+      3: [[.27, .27], [.5, .5], [.73, .73]],
+      4: [[.3, .3], [.7, .3], [.3, .7], [.7, .7]],
+      5: [[.28, .28], [.72, .28], [.5, .5], [.28, .72], [.72, .72]],
+      6: [[.3, .26], [.7, .26], [.3, .5], [.7, .5], [.3, .74], [.7, .74]]
+    };
+    ctx.fillStyle = '#2B3A55';
+    (PIPS[v] || []).forEach(q => {
+      ctx.beginPath(); ctx.arc(x + q[0] * s, y + q[1] * s, s * 0.075, 0, Math.PI * 2); ctx.fill();
+    });
+  }
+
+  function draw(){
+    const { ctx, W, H } = view;
+    if (W < 40) return;
+    ctx.clearRect(0, 0, W, H);
+    const g = geom(), ym = yMax();
+
+    // —— 横向网格线与 y 轴刻度（频率百分比） ——
+    ctx.font = '11px system-ui'; ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+    for (let v = 0; v <= ym + 1e-9; v += 0.1){
+      const y = g.y0 - (g.y0 - g.y1) * v / ym;
+      ctx.strokeStyle = v === 0 ? '#C7D3EC' : '#EDF1FA'; ctx.lineWidth = 1;
+      line(ctx, g.x0, y, g.x1, y);
+      ctx.fillStyle = '#93A1C0';
+      ctx.fillText(Math.round(v * 100) + '%', g.x0 - 8, y);
+    }
+
+    // —— 1/6 参考虚线（绿色） ——
+    const refY = g.y0 - (g.y0 - g.y1) * (1 / 6) / ym;
+    ctx.setLineDash([7, 5]); ctx.strokeStyle = '#1E9E54'; ctx.lineWidth = 2;
+    line(ctx, g.x0, refY, g.x1, refY);
+    ctx.setLineDash([]);
+
+    // —— 柱子：各面频率；柱顶标次数 ——
+    const colW = (g.x1 - g.x0) / 6;
+    for (let i = 0; i < 6; i++){
+      const fq = st.total ? st.counts[i] / st.total : 0;
+      const h = (g.y0 - g.y1) * fq / ym;
+      const bw = Math.min(64, colW - 20);
+      const x = g.x0 + colW * i + (colW - bw) / 2;
+      if (h > 0){
+        ctx.fillStyle = 'rgba(91,141,239,.88)';
+        ctx.fillRect(x, g.y0 - h, bw, h);
+        ctx.lineWidth = 2; ctx.strokeStyle = '#3F6FD1';
+        ctx.strokeRect(x, g.y0 - h, bw, h);
+      }
+      ctx.fillStyle = '#5B6B8C'; ctx.font = 'bold 13px system-ui';
+      ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
+      ctx.fillText(st.counts[i] + ' 次', x + bw / 2, g.y0 - h - 5);
+      ctx.fillStyle = '#93A1C0'; ctx.font = '12px system-ui';
+      ctx.textBaseline = 'top';
+      ctx.fillText((i + 1) + ' 点', x + bw / 2, g.y0 + 8);
+    }
+
+    // —— 参考线徽章（最后画，避免被高柱挡住） ——
+    ctx.font = 'bold 12px system-ui';
+    const refLabel = '1/6 ≈ 16.7%';
+    const rw = ctx.measureText(refLabel).width;
+    ctx.fillStyle = 'rgba(255,255,255,.94)';
+    ctx.beginPath(); ctx.roundRect(g.x1 - rw - 18, refY - 25, rw + 14, 20, 10); ctx.fill();
+    ctx.fillStyle = '#157F44'; ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+    ctx.fillText(refLabel, g.x1 - rw - 11, refY - 14);
+
+    // —— 上一次掷出的骰子 / 初始提示 ——
+    if (st.last){
+      drawDie(ctx, W - 66, 12, 40, st.last);
+      ctx.fillStyle = '#7A89A8'; ctx.font = '12px system-ui';
+      ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+      ctx.fillText('上一次', W - 74, 32);
+    }
+    if (st.total === 0){
+      ctx.fillStyle = '#93A1C0'; ctx.font = 'bold 14px system-ui';
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText('点上方按钮开始掷骰子', (g.x0 + g.x1) / 2, (g.y0 + g.y1) / 2);
+    }
+  }
+
+  function refresh(noFlash){
+    setChip2($('pbTotal'), String(st.total), noFlash);
+    for (let i = 0; i < 6; i++){
+      const fq = st.total ? st.counts[i] / st.total * 100 : 0;
+      setChip2($('pbF' + (i + 1)), (i + 1) + '点 ' + fq.toFixed(1) + '%', noFlash);
+    }
+    $('pbNote').textContent = st.total === 0
+      ? '点“掷 10 次”或“掷 100 次”开始：看看每个面的频率会不会靠近 1/6 ≈ 16.7%。'
+      : '已掷 ' + st.total + ' 次：对照绿色虚线看看——次数越多，各面频率越贴近 1/6，这就是“频率稳定于概率”。';
+    draw();
+  }
+
+  function setBtns(dis){
+    ['pbRoll10', 'pbRoll100', 'pbRoll1000', 'pbReset'].forEach(id => { $(id).disabled = dis; });
+  }
+  function roll(n){
+    if (rolling) return;
+    rolling = true; setBtns(true); clickSound();
+    const dur = Math.min(2200, 350 + n * 1.6);
+    let done = 0;
+    animate(dur, t => {
+      const target = Math.floor(t * n);
+      while (done < target){
+        const v = randInt(1, 6);
+        st.counts[v - 1]++; st.total++; st.last = v; done++;
+        if (done % 25 === 0) beep(480 + v * 40, 0.02, 'sine', 0.03);
+      }
+      refresh(true); // 动画过程中不闪 chips
+    }, () => { rolling = false; setBtns(false); refresh(); success(); });
+  }
+  $('pbRoll10').addEventListener('click', () => roll(10));
+  $('pbRoll100').addEventListener('click', () => roll(100));
+  $('pbRoll1000').addEventListener('click', () => roll(1000));
+  $('pbReset').addEventListener('click', () => {
+    if (rolling) return;
+    st.counts = [0, 0, 0, 0, 0, 0]; st.total = 0; st.last = 0;
+    refresh(); clickSound();
+  });
 
   function refit(){ view = fitCanvas(canvas); draw(); }
   redrawAll.push(refit);
